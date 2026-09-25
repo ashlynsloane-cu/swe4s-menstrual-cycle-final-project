@@ -225,20 +225,41 @@ For Aim 1, a cycle must additionally:
 A stricter >=80% coverage definition is retained as a sensitivity-analysis
 flag rather than replacing the primary threshold.
 
-### Primary Aim 1 cohort
+### Aim 1 cycle eligibility and analysis cohort
 
-The current preprocessing pipeline identifies:
+Cycle eligibility and participant eligibility are distinct.
+
+At the **cycle level**, a cycle is flagged `aim1_primary_eligible` if it:
+
+1. is a complete menses-anchored cycle;
+2. has the expected phase order;
+3. is closed by an observed subsequent menstrual onset; and
+4. has >=70% daily coverage for each of the four core physiological signals.
+
+The preprocessing pipeline identifies:
 
 - 42 total participants
 - 5,659 participant-days
 - 147 menses-anchored complete cycles
-- 93 primary Aim 1 eligible cycles
-- 25 participants with at least two primary-eligible cycles
-- 16 participants with primary-eligible cycles represented in both study
-  intervals
+- 93 cycles passing the Aim 1 cycle-level QC criteria
+- 37 participants contributing at least one such cycle
 
-Among the 25 repeated-cycle participants, 81 cycles are available for the
-primary within-person reproducibility analysis.
+However, the primary Aim 1 question concerns **within-person reproducibility
+across repeated cycles**. A participant therefore needs at least two eligible
+cycles to contribute to the primary analysis.
+
+The 93 cycle-level eligible cycles are distributed as follows:
+
+- 25 participants have >=2 eligible cycles and contribute 81 cycles
+- 12 participants have exactly 1 eligible cycle and contribute 12 cycles
+- 5 participants have no eligible cycles
+
+Therefore, the **primary Aim 1 repeated-cycle analysis cohort is 25
+participants contributing 81 cycles**, not all 93 cycle-level eligible cycles.
+
+Among these data, 16 participants have primary-eligible cycles represented in
+both study intervals and can contribute to the secondary long-term stability
+analysis.
 
 Participants, rather than individual cycles, are treated as the independent
 biological units in downstream inference.
