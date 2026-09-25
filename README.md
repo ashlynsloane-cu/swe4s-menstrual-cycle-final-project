@@ -263,3 +263,75 @@ analysis.
 
 Participants, rather than individual cycles, are treated as the independent
 biological units in downstream inference.
+
+## Analysis handoff
+
+The shared preprocessing and QC pipeline is complete before Aim 1 and Aim 2
+development begins. Both analyses must start from the same cleaned data and
+must not independently redefine the shared preprocessing rules.
+
+### Shared starting data
+
+The main shared daily dataset is:
+
+`results/preprocessed/mcphases_daily_master.csv`
+
+Cycle-level QC information is stored in:
+
+`results/preprocessed/mcphases_cycle_qc.csv`
+
+Participant-level QC information is stored in:
+
+`results/preprocessed/mcphases_participant_qc.csv`
+
+These generated files are not committed to Git because they are derived from
+restricted mcPHASES data. Each collaborator should obtain the mcPHASES dataset
+independently and regenerate these files using the documented preprocessing
+command.
+
+### Aim 1: physiological signature reproducibility
+
+Aim 1 asks whether menstrual-cycle physiological signatures are reproducible
+within individuals.
+
+A cycle can pass cycle-level Aim 1 QC without necessarily being usable for the
+repeated-cycle analysis. The pipeline currently identifies:
+
+- 93 cycles passing cycle-level Aim 1 QC
+- 37 participants contributing at least one eligible cycle
+- 25 participants contributing at least two eligible cycles
+- 81 eligible cycles from those 25 repeated-cycle participants
+- 16 participants with eligible cycles represented in both study intervals
+
+Therefore, the primary Aim 1 repeated-cycle analysis cohort is 25 participants
+contributing 81 cycles.
+
+### Aim 2: personalized phase prediction
+
+Aim 2 asks whether personalized wearable physiology improves prediction of
+hormone-defined menstrual phase relative to population-level approaches.
+
+Aim 2 starts from the same cleaned daily master dataset but defines its own
+analysis-specific eligibility criteria. It should not automatically restrict
+the dataset to `aim1_primary_eligible` cycles because prediction does not have
+the same requirement for repeated, closed cycles as Aim 1.
+
+Participant-level separation between training and testing must be preserved
+when evaluating population-level prediction models to prevent data leakage.
+
+### Shared preprocessing contract
+
+After this handoff, Aim-specific branches should not independently change
+shared preprocessing choices such as:
+
+- signal definitions or merge keys
+- invalid-value filtering
+- nightly HRV aggregation
+- menstrual phase normalization
+- menses-anchored cycle definition
+- cycle closure logic
+- physiological coverage calculations
+
+If a genuine preprocessing bug is discovered, it should be fixed in a
+dedicated branch with an accompanying test, merged into `main`, and then
+incorporated into both Aim branches.
