@@ -176,3 +176,69 @@ Then open a pull request into `main` and have another group member review it bef
 - Add unit tests whenever preprocessing behavior changes.
 - Use participant-level train/test separation for predictive analyses.
 - Generate final figures from scripts so they can be reproduced from the processed inputs.
+
+## Preprocessing and quality-control decisions
+
+The primary analysis uses four wearable physiological signals:
+
+- resting heart rate
+- HRV, represented by nightly median RMSSD
+- nightly skin temperature
+- respiratory rate during full sleep
+
+### Physiological preprocessing
+
+Resting heart rate, RMSSD, and respiratory-rate values less than or equal to
+zero are treated as invalid device values and excluded before daily/nightly
+aggregation.
+
+HRV is supplied as 5-minute RMSSD windows during sleep. The primary pipeline
+uses the median of positive RMSSD windows within each participant-night. A
+sensitivity check comparing this approach with RMSSD calculated only from
+windows with Fitbit coverage >= 0.90 showed minimal impact on nightly values,
+so no additional HRV coverage filter or arbitrary upper RMSSD cutoff is used.
+
+No missing physiological measurements are imputed.
+
+### Menstrual-cycle definition
+
+The mcPHASES reference analysis identifies 192 sequences containing all four
+phase labels:
+
+- Menstrual
+- Follicular
+- Fertility
+- Luteal
+
+For the present project, the primary biological analysis uses a stricter,
+menses-anchored definition. A cycle begins at an observed Menstrual phase and
+must subsequently contain all four phases in the expected order.
+
+This produces 147 menses-anchored complete cycles.
+
+For Aim 1, a cycle must additionally:
+
+1. be closed by an observed subsequent menstrual onset;
+2. have valid phase order; and
+3. have >=70% daily coverage for each of the four core physiological signals.
+
+A stricter >=80% coverage definition is retained as a sensitivity-analysis
+flag rather than replacing the primary threshold.
+
+### Primary Aim 1 cohort
+
+The current preprocessing pipeline identifies:
+
+- 42 total participants
+- 5,659 participant-days
+- 147 menses-anchored complete cycles
+- 93 primary Aim 1 eligible cycles
+- 25 participants with at least two primary-eligible cycles
+- 16 participants with primary-eligible cycles represented in both study
+  intervals
+
+Among the 25 repeated-cycle participants, 81 cycles are available for the
+primary within-person reproducibility analysis.
+
+Participants, rather than individual cycles, are treated as the independent
+biological units in downstream inference.
