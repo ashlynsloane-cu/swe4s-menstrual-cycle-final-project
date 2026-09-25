@@ -1,0 +1,10 @@
+name: beyond-average-cycle
+channels:
+  - conda-forge
+dependencies:
+  - python=3.12
+  - pandas>=2.2
+  - numpy>=2.0
+  - pytest>=8
+  - pycodestyle>=2.14
+  - pip

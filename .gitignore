@@ -1,0 +1,29 @@
+# Restricted / local data
+/data/*
+!/data/README.md
+
+# Generated results
+/results/*
+!/results/README.md
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environments
+.venv/
+venv/
+env/
+.mamba/
+
+# IDE / OS
+.DS_Store
+.vscode/
+.idea/
+
+# Jupyter
+.ipynb_checkpoints/
