@@ -1,0 +1,183 @@
+AIM 2: PERSONALIZED MENSTRUAL-PHASE PREDICTION
+===============================================
+
+Overall goal
+------------
+Determine whether incorporating an individual's prior wearable physiology
+improves prediction of future hormone-defined menstrual phase beyond a model
+based only on population-level physiological patterns.
+
+Prediction target
+-----------------
+Hormone-derived mcPHASES phase:
+
+- Menstrual
+- Follicular
+- Fertility
+- Luteal
+
+Wearable predictors
+-------------------
+- Resting heart rate
+- HRV (nightly median RMSSD)
+- Nightly skin temperature
+- Respiratory rate
+
+
+PRIMARY QUESTION
+================
+
+Does adding limited person-specific calibration data improve prediction of
+future hormone-defined menstrual phase beyond a population-only model?
+
+Primary model comparison:
+
+1. Population-only model
+   - Learns physiological relationships from other participants.
+   - The target participant is excluded from population-model training.
+
+2. Hybrid personalized model
+   - Uses population information plus the target participant's own earlier
+     labeled wearable observations.
+   - Represents the realistic use case in which a wearable begins with
+     population knowledge and becomes personalized after approximately
+     1-2 observed cycles.
+
+Both models must be evaluated on the SAME held-out future days for the target
+participant.
+
+We will explicitly compare personalization after one prior cycle versus after
+two prior cycles when the data permit.
+
+
+SECONDARY QUESTION 1: IRREGULAR / ATYPICAL CYCLES
+==================================================
+
+Is the benefit of personalization greater for participants whose menstrual
+cycles are less well represented by population-average cycle characteristics?
+
+Examples of cycle characteristics that may be considered include:
+
+- Total cycle length
+- Menstrual-phase duration
+- Follicular-phase duration
+- Fertility-phase duration
+- Luteal-phase duration
+
+The goal is NOT to exclude participants for having unusual phase durations.
+
+A short or otherwise atypical biological phase should remain in the analysis
+if it is genuinely represented in the hormone-derived phase labels.
+
+We will ask whether personalization gain:
+
+    hybrid performance - population-only performance
+
+is associated with how atypical an individual's cycle characteristics are
+relative to the cohort.
+
+This analysis directly tests the motivation behind "Beyond the Average Cycle":
+people who are least well represented by population averages may benefit most
+from personalized interpretation.
+
+
+SECONDARY QUESTION 2: LONG-TERM GENERALIZATION
+===============================================
+
+Does personalization learned from an individual's 2022 data still improve
+prediction of that same individual's menstrual phase in 2024?
+
+For participants with data in both intervals:
+
+- Population-only model:
+  learns from other participants and predicts the target participant in 2024.
+
+- Hybrid personalized model:
+  uses population information plus the target participant's earlier 2022 data,
+  then predicts that participant's 2024 data.
+
+This tests whether person-specific calibration remains useful across a
+substantial time interval rather than only across adjacent cycles.
+
+
+EXPLORATORY QUESTION: PERSONAL-ONLY MODEL
+=========================================
+
+How well can future menstrual phase be predicted using only an individual's
+own prior wearable physiology?
+
+Personal-only model:
+- Trained only on the target participant's earlier labeled wearable data.
+- Evaluated on that participant's later unseen data.
+
+This is NOT expected to be the most practical primary model because only
+1-2 prior cycles may provide limited training data.
+
+Its purpose is to determine:
+
+- how noisy a purely individual model is with limited calibration data;
+- whether some participants can nevertheless be predicted well from their
+  own prior physiology alone; and
+- whether combining personal and population information is more useful than
+  either source alone.
+
+
+CORE SCIENTIFIC COMPARISON
+==========================
+
+For a target participant:
+
+                      SAME FUTURE TEST DAYS
+                               |
+              ---------------------------------
+              |               |               |
+              v               v               v
+       Population-only      Hybrid       Personal-only
+       other people         population   target person's
+       only                 + personal   prior data only
+                            calibration
+              |               |               |
+              ---------------------------------
+                               |
+                               v
+                  Compare predictive performance
+
+
+ANALYSIS PRINCIPLES
+===================
+
+1. No future-data leakage.
+   Personalization may use only observations occurring before the test data.
+
+2. Population-only means population-only.
+   The target participant must not contribute training information to the
+   population-only model used to predict that participant.
+
+3. Do not impose "normal" phase-duration requirements.
+   Participants should not be excluded simply because a phase is unusually
+   short or long.
+
+4. Distinguish biological variation from missing wearable data.
+   A genuinely short phase is not equivalent to a phase for which wearable
+   measurements are missing.
+
+5. Hormone measurements define/support the prediction target.
+   LH, estrogen/E3G, and PdG are not wearable predictors and should not be
+   supplied to the prediction model.
+
+6. Compare models on identical held-out observations whenever possible.
+   Differences in performance should reflect the model, not different test
+   datasets.
+
+7. Participant chronology must be preserved.
+   Randomly splitting days from the same participant into training and test
+   sets would leak person-specific information and overestimate performance.
+
+8. Do not assume personalization must help.
+   A null result is scientifically meaningful.
+
+9. Treat the personal-only model as exploratory unless the available personal
+   training data prove sufficient for stable estimation.
+
+10. Analysis-specific eligibility should reflect prediction feasibility and
+    data availability, not conformity to population-average menstrual biology.
