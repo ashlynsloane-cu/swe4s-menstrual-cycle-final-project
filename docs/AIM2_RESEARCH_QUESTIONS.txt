@@ -358,3 +358,60 @@ baselines calculated exclusively from the target participant's cycles 1-2.
 
 Population-only predictions must not use those target-specific baselines or
 other target calibration information.
+
+
+FINAL PRIMARY MODEL SPECIFICATION
+=================================
+
+The primary Aim 2 model specification was frozen before evaluation of the
+within-interval future test cohort.
+
+Primary cohort:
+- 19 participant-study-interval folds
+- 16 unique participants
+- 22 future cycles
+- 443 held-out future participant-days
+
+For each fold:
+- cycles 1-2 within one study interval are personal calibration;
+- cycles 3+ from that same interval are future test data;
+- the target participant is completely excluded from population training,
+  including data from the target's other study interval.
+
+Population predictors:
+- standardized resting heart rate
+- standardized HRV RMSSD
+- standardized nightly temperature
+- standardized respiratory rate
+
+Personalized component:
+- participant-specific phase intercepts
+- participant-specific effects of within-person RHR deviation
+- participant-specific effects of within-person HRV deviation
+- participant-specific effects of within-person temperature deviation
+- participant-specific effects of within-person respiratory-rate deviation
+
+Within-person deviations are calculated relative to physiological baselines
+defined separately within participant-study-interval.
+
+For the target participant, those baselines are estimated exclusively from
+cycles 1-2 and then frozen before prediction of cycles 3+.
+
+Model family:
+Bayesian hierarchical multinomial logistic regression with partial pooling.
+
+Priors:
+- common intercept: Normal(0, 1.5)
+- common physiological coefficients: Normal(0, 1)
+- participant intercept SD: HalfNormal(1)
+- participant physiological-deviation SDs: HalfNormal(0.75)
+
+Final MCMC settings:
+- 4 chains
+- 1,000 tuning iterations per chain
+- 1,000 posterior draws per chain
+- target_accept = 0.95
+
+The model architecture, predictors, priors, split rules, and eligibility rules
+will not be changed in response to performance on the primary future test
+cohort.
