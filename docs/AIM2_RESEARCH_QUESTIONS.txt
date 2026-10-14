@@ -307,3 +307,54 @@ Secondary 2:
 Exploratory:
     How well can future phase be predicted from personal data alone after two
     prior cycles?
+
+
+MODEL DEVELOPMENT AND FINAL EVALUATION
+======================================
+
+Participant 22 was used as the dedicated Aim 2 model-development participant.
+
+Their cycles 3+ were examined during development of the personalized model,
+including inspection of prediction errors, confusion matrices, and
+participant-specific model behavior. Therefore, Participant 22 is not
+considered an untouched confirmatory test participant.
+
+The final primary model specification will be frozen before evaluation on
+the remaining matched participants.
+
+Final confirmatory cohort after excluding Participant 22:
+
+- 22 participants
+- 52 future cycles
+- 1,286 future participant-days
+
+No model architecture, priors, feature definitions, or eligibility rules will
+be changed in response to performance on those confirmatory participants.
+
+
+PERSONALIZATION ARCHITECTURE
+============================
+
+The preferred personalized framework is modular hierarchical Bayesian
+calibration.
+
+1. A population model is estimated using participants other than the target.
+
+2. The population-level physiological relationships and distribution of
+   participant-to-participant variation are learned from that population
+   training set.
+
+3. The target participant's first two cycles are then used only to estimate
+   that target's person-specific deviations from the population relationship.
+
+4. The target's cycles 3+ remain unavailable during calibration and are used
+   only for future evaluation.
+
+The target's calibration data should not be allowed to redefine the
+population relationship.
+
+Where useful, person-specific calibration may use deviations from physiological
+baselines calculated exclusively from the target participant's cycles 1-2.
+
+Population-only predictions must not use those target-specific baselines or
+other target calibration information.
