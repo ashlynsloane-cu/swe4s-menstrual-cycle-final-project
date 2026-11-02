@@ -264,6 +264,104 @@ analysis.
 Participants, rather than individual cycles, are treated as the independent
 biological units in downstream inference.
 
+### Aim 1 feature construction and similarity analysis
+
+For each eligible menstrual cycle, phase-specific means are calculated for the
+four core physiological signals:
+
+- resting heart rate
+- HRV RMSSD
+- nightly temperature
+- respiratory rate
+
+For each signal, the mean value across the entire cycle is calculated. Each
+phase-specific mean is then centered relative to that cycle-level mean.
+
+The four menstrual phases are:
+
+- Menstrual
+- Follicular
+- Fertility
+- Luteal
+
+This produces 16 centered physiological features per cycle:
+
+`4 physiological signals × 4 menstrual phases = 16 features`
+
+Each row of the resulting cycle-signature table represents one menstrual
+cycle.
+
+For the primary similarity analysis, cycle signatures containing missing
+physiological features are excluded rather than imputed. This leaves 79
+complete cycle signatures from the same 25 repeated-cycle participants.
+
+Standardized Euclidean distance is calculated between every unique pair of
+complete cycle signatures. Standardization accounts for differences in scale
+between physiological measures such as beats per minute, milliseconds,
+temperature, and breaths per minute.
+
+Each pair is classified as either:
+
+- same participant
+- different participants
+
+The within-person similarity advantage is defined as:
+
+`mean different-person distance - mean same-person distance`
+
+A positive similarity advantage indicates that cycles from the same
+participant are, on average, more similar than cycles from different
+participants.
+
+Participant-label permutation testing is used to test whether the observed
+within-person similarity advantage is larger than expected by chance.
+Participant labels are randomly reassigned across fixed cycle signatures while
+the physiological data and pairwise distances remain unchanged. The primary
+analysis uses 10,000 permutations with a fixed random seed for reproducibility.
+
+The analysis is also repeated separately for each physiological signal to
+evaluate signal-specific reproducibility.
+
+### Aim 1 results
+
+The combined 16-feature physiological signature showed a modest positive
+within-person similarity advantage:
+
+- similarity advantage: 0.1197
+- permutation p-value: 0.2318
+
+Resting heart rate showed the strongest signal-specific within-person
+reproducibility:
+
+- similarity advantage: 0.1694
+- permutation p-value: 0.0660
+
+Nightly temperature and HRV RMSSD also showed positive but weaker
+within-person similarity advantages. Respiratory rate did not show evidence
+of greater within-person similarity.
+
+These results suggest that resting heart rate may contain the strongest
+person-specific cycle-level physiological pattern among the four signals,
+although the observed permutation-test result did not reach conventional
+statistical significance.
+
+### Run Aim 1
+
+From the repository root:
+
+```bash
+python -m mcphases.run_aim1
+```
+
+The analysis writes:
+
+```text
+results/aim1/cycle_signatures.csv
+results/aim1/pairwise_distances.csv
+results/aim1/signal_specific_reproducibility.csv
+results/aim1/permutation_null_distribution.csv
+```
+
 ## Analysis handoff
 
 The shared preprocessing and QC pipeline is complete before Aim 1 and Aim 2
