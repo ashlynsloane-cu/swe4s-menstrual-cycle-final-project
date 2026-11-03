@@ -1,435 +1,234 @@
 # Beyond the Average Cycle
 
-## Person-specific physiological signatures across the menstrual cycle
+**Person-specific physiological signatures across the menstrual cycle using mcPHASES**
 
-This repository contains reproducible code for a CSCI 6118 / Software Engineering for Scientists group project using the **mcPHASES** dataset.
+This repository contains the final project for **CSCI 6118 / Software Engineering for Scientists**. It uses wearable and hormone-derived data from the mcPHASES dataset to study whether menstrual-cycle physiology is reproducible within individuals and whether person-specific information improves prediction of future menstrual phase.
 
-### Scientific question
+## Project status
 
-Population-level menstrual-cycle changes in wearable physiology are well established, but population averages may not accurately describe an individual person's response. We ask whether menstrual-cycle-associated physiological patterns are reproducible within individuals and whether personalization improves interpretation of wearable physiology.
+The scientific analyses for this project are complete.
 
-### Aims
+You **do not need to rerun the Bayesian models or simulations** to use, review, or grade this repository. The final analysis code, figures, tests, and reproducibility workflow are version-controlled here. Computationally expensive model outputs are intentionally not committed.
 
-**Aim 1 — Reproducibility of person-specific physiology**  
-Test whether repeated cycles from the same participant are more physiologically similar than cycles from different participants.
+The repository contains:
 
-**Aim 2 — Personalized versus population models**  
-Test whether participant-specific calibration improves prediction of hormone-defined menstrual phase compared with a pooled population model.
+- finalized preprocessing and cycle-quality-control code;
+- Aim 1 analyses of within-person physiological reproducibility;
+- Aim 2 population and personalized phase-prediction models;
+- longitudinal 2022-to-2024 personalization analyses;
+- simulation experiments examining how many calibration cycles are needed for personalization;
+- final presentation-ready figures;
+- tests and GitHub Actions configuration.
 
-The two aims share a common preprocessing pipeline but can be completed independently.
+## Scientific questions
 
-## Dataset
+### Aim 1
 
-We use the restricted-access **mcPHASES** dataset from PhysioNet:
+**Are menstrual-cycle physiological signatures reproducible within the same person across cycles?**
 
-https://physionet.org/content/mcphases/1.0.0/
+The analysis focuses on four wearable-derived physiological signals:
 
-The dataset contains repeated menstrual-cycle measurements including hormone/self-report data and wearable physiology. Raw participant-level data are **not included in this repository**.
+- resting heart rate;
+- HRV RMSSD;
+- nightly skin temperature;
+- respiratory rate.
 
-### Data-use rule
+Hormone measurements are used to define menstrual-cycle phase, but they are not used as predictors.
 
-Do **not** commit downloaded mcPHASES files to GitHub. The `data/` directory is ignored except for `data/README.md`.
+### Aim 2
+
+**When is person-specific wearable information useful for predicting future menstrual phase?**
+
+Aim 2 compares:
+
+1. a **population-only model**, trained without data from the target participant; and
+2. a **personalized hybrid model**, which adds information from the target participant's prior cycles.
+
+The four prediction classes are Menstrual, Follicular, Fertility, and Luteal.
+
+## Main Aim 2 findings
+
+The empirical analyses did **not** show that two-cycle personalization improved overall prediction of future menstrual phase.
+
+In the near-term within-interval analysis, personalization did not improve overall discrimination and produced worse probabilistic calibration.
+
+In the longitudinal analysis, person-specific information learned from 2022 did not transfer well to the same participants in 2024. Baseline physiological drift and changes in phase-specific patterns contributed to this failure.
+
+Simulation experiments provide an important qualification: under a stationary data-generating process resembling the observed mcPHASES variance structure, approximately **two calibration cycles** were sufficient for a reliable personalization benefit in the nominal scenario. However, the required number of cycles changed substantially when the strength of stable person-specific signal or cycle-to-cycle variability changed.
+
+Therefore, **two cycles is not a universal rule**. More calibration data can reduce transient cycle noise, but it cannot solve physiological drift when the personalized signature itself changes over time.
 
 ## Repository structure
 
 ```text
-beyond-average-cycle/
-├── .github/
-│   └── workflows/
-│       └── test.yml
-├── data/
-│   └── README.md
-├── results/
-│   └── README.md
+.
+├── .github/workflows/test.yml
+├── assets/aim2/
+├── data/README.md
+├── docs/figures/aim2/
+├── scripts/aim2/
+│   └── development/
 ├── src/
-│   └── mcphases/
-│       ├── __init__.py
-│       └── preprocess.py
 ├── tests/
-│   └── test_preprocess.py
-├── .gitignore
 ├── environment.yml
 ├── pyproject.toml
 └── README.md
 ```
 
-## Reproduce the environment
+## Final Aim 2 figures
 
-Using `mamba` or `conda`:
-
-```bash
-mamba env create -f environment.yml
-mamba activate beyond-average-cycle
-python -m pip install -e .
-```
-
-## Obtain the data
-
-1. Create a PhysioNet account.
-2. Complete the mcPHASES data-use agreement.
-3. Download the dataset.
-4. Place the CSV files locally under `data/mcphases/`.
-
-For example:
+Version-controlled copies of the final figures are stored in:
 
 ```text
-data/mcphases/
-├── hormones_and_selfreport.csv
-├── resting_heart_rate.csv
-├── computed_temperature.csv
-└── ...
+docs/figures/aim2/
 ```
 
-## Run preprocessing
+- **Figure 1 — Near-term personalization:** population-only versus two-cycle personalized prediction for future cycles within the same study interval.
+- **Figure 2 — Longitudinal personalization:** why person-specific information learned in 2022 does not transfer reliably to 2024, including baseline drift and phase-profile transfer diagnostics.
+- **Figure 3 — Personalization thresholds:** simulation showing how the number of calibration cycles required for reliable personalization depends on stable person-specific signal and cycle-to-cycle variability.
+
+## Data and generated results
+
+The mcPHASES source data are not committed to this repository.
+
+Generated analysis outputs under `results/` are also excluded from Git by default. This includes large or restricted artifacts such as participant-level prediction files, posterior NetCDF files, bootstrap replicate tables, simulation replicate tables, temporary model outputs, and run logs.
+
+This keeps the repository small and avoids committing restricted or reproducible derived data. The final figures and the code required to regenerate the analyses are version-controlled.
+
+## Reproducibility and software engineering
+
+The repository was structured around reproducible scientific software practices, including:
+
+- modular preprocessing and analysis code;
+- explicit train/calibration/test separation;
+- leakage-safe population training;
+- deterministic simulation seeds;
+- unit tests for core data-splitting logic;
+- PEP 8 style checks;
+- Python compilation checks;
+- GitHub Actions continuous integration;
+- explicit environment configuration;
+- version-controlled final figures;
+- separation of generated results from source code.
+
+The primary environment target is **Python 3.12**. The final analyses were also executed successfully in a local development environment using Python 3.14.
+
+## Installation
+
+Installation is only needed for development or reproduction.
+
+### Conda
 
 ```bash
-python -m mcphases.preprocess \
-    --data-dir data/mcphases \
-    --output-dir results/preprocessed
+conda env create -f environment.yml
+conda activate beyond-average-cycle
 ```
 
-The current pipeline:
+### pip
 
-- validates required columns;
-- standardizes mcPHASES phase labels;
-- parses LH, estrogen/E3G, and PdG measurements;
-- identifies menstrual cycles within study intervals;
-- calculates cycle day and normalized cycle position;
-- flags complete cycles and invalid phase order;
-- aggregates resting heart rate and nightly temperature to participant-day values;
-- merges physiology with hormone/self-report data;
-- identifies repeated-cycle and long-term-analysis candidates; and
-- writes participant- and cycle-level QC summaries.
-
-No imputation or model scaling is performed during shared preprocessing. Any scaling used for prediction must be fitted only on training data to prevent data leakage.
-
-## Outputs
-
-The preprocessing command generates:
-
-```text
-results/preprocessed/
-├── mcphases_daily_master.csv
-├── mcphases_daily_complete_cycles.csv
-├── mcphases_cycle_qc.csv
-└── mcphases_participant_qc.csv
+```bash
+python -m pip install -e ".[dev]"
 ```
 
-These files may contain restricted participant-level information and are ignored by Git.
+## Running tests
 
-## Tests
-
-Run:
+The normal repository validation step is lightweight and does **not** rerun the Bayesian analyses.
 
 ```bash
 pytest -q
+python3 -m pycodestyle src tests scripts/aim2/*.py
+python3 -m py_compile scripts/aim2/*.py
+git diff --check
 ```
 
-Check PEP 8 style:
+GitHub Actions performs the corresponding lightweight checks under Python 3.12.
+
+## Optional: full scientific reproduction
+
+The commands in this section are **only** for someone who intentionally wants to regenerate the scientific analyses from the required local mcPHASES data.
+
+**These steps are not required for normal repository use, code review, grading, or figure inspection.**
+
+### Near-term Aim 2 analysis
 
 ```bash
-pycodestyle src tests
+python3 scripts/aim2/build_within_interval_manifest.py
+python3 scripts/aim2/build_centered_primary_folds.py
+PYTENSOR_FLAGS="cxx=" python3 scripts/aim2/run_primary_hierarchical_models.py
+python3 scripts/aim2/evaluate_primary_predictions.py
+python3 scripts/aim2/make_figure1_near_term_personalization.py
 ```
 
-GitHub Actions runs both checks automatically on pushes and pull requests.
-
-## Reproducible collaboration workflow
-
-For each change:
+### Longitudinal Aim 2 analysis
 
 ```bash
-git switch main
-git pull
-git switch -c descriptive-branch-name
-# make changes
-git add <files>
-git commit -m "Describe the change"
-git push -u origin descriptive-branch-name
+python3 scripts/aim2/build_longitudinal_manifest.py
+python3 scripts/aim2/build_longitudinal_folds.py
+PYTENSOR_FLAGS="cxx=" python3 scripts/aim2/run_longitudinal_hierarchical_models.py
+python3 scripts/aim2/evaluate_longitudinal_predictions.py
+python3 scripts/aim2/estimate_phase_profile_repeatability.py
+python3 scripts/aim2/diagnose_empirical_profile_transfer.py
+python3 scripts/aim2/diagnose_personalization_failure.py
+PYTENSOR_FLAGS="cxx=" python3 scripts/aim2/oracle_recenter_longitudinal.py
+python3 scripts/aim2/diagnose_residual_phase_drift.py
+python3 scripts/aim2/make_figure2_longitudinal_mechanisms.py
 ```
 
-Then open a pull request into `main` and have another group member review it before merging.
+`oracle_recenter_longitudinal.py` is a retrospective diagnostic that uses the observed 2024 baseline. It is not a prospective prediction model.
 
-## Planned analyses
-
-### Aim 1
-
-1. Define interpretable cycle-level physiological features.
-2. Quantify within-person and between-person cycle similarity.
-3. Test the within-person similarity advantage with participant-label permutation tests.
-4. Evaluate signal-specific reproducibility.
-5. If feasible, test long-term stability across study intervals.
-
-### Aim 2
-
-1. Define hormone-derived phase as the prediction target.
-2. Establish a simple calendar-based baseline.
-3. Fit population models with participant-level cross-validation.
-4. Fit personalized models using prior cycles from the same participant.
-5. Compare balanced accuracy / macro-F1 within participants.
-
-## Reproducibility principles
-
-- Keep raw restricted data out of Git.
-- Keep preprocessing deterministic.
-- Record package versions in `environment.yml`.
-- Write reusable functions instead of analysis-only notebook code.
-- Add unit tests whenever preprocessing behavior changes.
-- Use participant-level train/test separation for predictive analyses.
-- Generate final figures from scripts so they can be reproduced from the processed inputs.
-
-## Preprocessing and quality-control decisions
-
-The primary analysis uses four wearable physiological signals:
-
-- resting heart rate
-- HRV, represented by nightly median RMSSD
-- nightly skin temperature
-- respiratory rate during full sleep
-
-### Physiological preprocessing
-
-Resting heart rate, RMSSD, and respiratory-rate values less than or equal to
-zero are treated as invalid device values and excluded before daily/nightly
-aggregation.
-
-HRV is supplied as 5-minute RMSSD windows during sleep. The primary pipeline
-uses the median of positive RMSSD windows within each participant-night. A
-sensitivity check comparing this approach with RMSSD calculated only from
-windows with Fitbit coverage >= 0.90 showed minimal impact on nightly values,
-so no additional HRV coverage filter or arbitrary upper RMSSD cutoff is used.
-
-No missing physiological measurements are imputed.
-
-### Menstrual-cycle definition
-
-The mcPHASES reference analysis identifies 192 sequences containing all four
-phase labels:
-
-- Menstrual
-- Follicular
-- Fertility
-- Luteal
-
-For the present project, the primary biological analysis uses a stricter,
-menses-anchored definition. A cycle begins at an observed Menstrual phase and
-must subsequently contain all four phases in the expected order.
-
-This produces 147 menses-anchored complete cycles.
-
-For Aim 1, a cycle must additionally:
-
-1. be closed by an observed subsequent menstrual onset;
-2. have valid phase order; and
-3. have >=70% daily coverage for each of the four core physiological signals.
-
-A stricter >=80% coverage definition is retained as a sensitivity-analysis
-flag rather than replacing the primary threshold.
-
-### Aim 1 cycle eligibility and analysis cohort
-
-Cycle eligibility and participant eligibility are distinct.
-
-At the **cycle level**, a cycle is flagged `aim1_primary_eligible` if it:
-
-1. is a complete menses-anchored cycle;
-2. has the expected phase order;
-3. is closed by an observed subsequent menstrual onset; and
-4. has >=70% daily coverage for each of the four core physiological signals.
-
-The preprocessing pipeline identifies:
-
-- 42 total participants
-- 5,659 participant-days
-- 147 menses-anchored complete cycles
-- 93 cycles passing the Aim 1 cycle-level QC criteria
-- 37 participants contributing at least one such cycle
-
-However, the primary Aim 1 question concerns **within-person reproducibility
-across repeated cycles**. A participant therefore needs at least two eligible
-cycles to contribute to the primary analysis.
-
-The 93 cycle-level eligible cycles are distributed as follows:
-
-- 25 participants have >=2 eligible cycles and contribute 81 cycles
-- 12 participants have exactly 1 eligible cycle and contribute 12 cycles
-- 5 participants have no eligible cycles
-
-Therefore, the **primary Aim 1 repeated-cycle analysis cohort is 25
-participants contributing 81 cycles**, not all 93 cycle-level eligible cycles.
-
-Among these data, 16 participants have primary-eligible cycles represented in
-both study intervals and can contribute to the secondary long-term stability
-analysis.
-
-Participants, rather than individual cycles, are treated as the independent
-biological units in downstream inference.
-
-### Aim 1 feature construction and similarity analysis
-
-For each eligible menstrual cycle, phase-specific means are calculated for the
-four core physiological signals:
-
-- resting heart rate
-- HRV RMSSD
-- nightly temperature
-- respiratory rate
-
-For each signal, the mean value across the entire cycle is calculated. Each
-phase-specific mean is then centered relative to that cycle-level mean.
-
-The four menstrual phases are:
-
-- Menstrual
-- Follicular
-- Fertility
-- Luteal
-
-This produces 16 centered physiological features per cycle:
-
-`4 physiological signals × 4 menstrual phases = 16 features`
-
-Each row of the resulting cycle-signature table represents one menstrual
-cycle.
-
-For the primary similarity analysis, cycle signatures containing missing
-physiological features are excluded rather than imputed. This leaves 79
-complete cycle signatures from the same 25 repeated-cycle participants.
-
-Standardized Euclidean distance is calculated between every unique pair of
-complete cycle signatures. Standardization accounts for differences in scale
-between physiological measures such as beats per minute, milliseconds,
-temperature, and breaths per minute.
-
-Each pair is classified as either:
-
-- same participant
-- different participants
-
-The within-person similarity advantage is defined as:
-
-`mean different-person distance - mean same-person distance`
-
-A positive similarity advantage indicates that cycles from the same
-participant are, on average, more similar than cycles from different
-participants.
-
-Participant-label permutation testing is used to test whether the observed
-within-person similarity advantage is larger than expected by chance.
-Participant labels are randomly reassigned across fixed cycle signatures while
-the physiological data and pairwise distances remain unchanged. The primary
-analysis uses 10,000 permutations with a fixed random seed for reproducibility.
-
-The analysis is also repeated separately for each physiological signal to
-evaluate signal-specific reproducibility.
-
-### Aim 1 results
-
-The combined 16-feature physiological signature showed a modest positive
-within-person similarity advantage:
-
-- similarity advantage: 0.1197
-- permutation p-value: 0.2318
-
-Resting heart rate showed the strongest signal-specific within-person
-reproducibility:
-
-- similarity advantage: 0.1694
-- permutation p-value: 0.0660
-
-Nightly temperature and HRV RMSSD also showed positive but weaker
-within-person similarity advantages. Respiratory rate did not show evidence
-of greater within-person similarity.
-
-These results suggest that resting heart rate may contain the strongest
-person-specific cycle-level physiological pattern among the four signals,
-although the observed permutation-test result did not reach conventional
-statistical significance.
-
-### Run Aim 1
-
-From the repository root:
+### Simulation analysis
 
 ```bash
-python -m mcphases.run_aim1
+python3 scripts/aim2/estimate_simulation_components.py
+python3 scripts/aim2/estimate_phase_profile_repeatability.py
+python3 scripts/aim2/run_cycle_depth_simulation.py
+python3 scripts/aim2/run_cycle_depth_sensitivity.py
+python3 scripts/aim2/run_variance_cycle_thresholds.py
+python3 scripts/aim2/run_nominal_precision_check.py
+python3 scripts/aim2/make_figure3_personalization_thresholds.py
 ```
 
-The analysis writes:
+On the development Mac, PyTensor model fitting used:
+
+```bash
+PYTENSOR_FLAGS="cxx=" python3 <script>
+```
+
+This is a platform-specific workaround and may not be necessary on other systems.
+
+## Reproducibility verification
+
+The final longitudinal reproducibility rerun regenerated all nine longitudinal folds. The resulting aggregate fold-results file and prediction file were **byte-for-byte identical** to the preserved original outputs under SHA-256 comparison.
+
+The longitudinal rerun produced:
+
+- 18 fitted models across 9 target participants;
+- 0 divergences;
+- worst observed maximum R-hat of 1.0155;
+- minimum bulk ESS of 698.6;
+- minimum tail ESS of 736.5;
+- 701 held-out 2024 evaluation days.
+
+## Development scripts
+
+Exploratory and pilot scripts are retained under:
 
 ```text
-results/aim1/cycle_signatures.csv
-results/aim1/pairwise_distances.csv
-results/aim1/signal_specific_reproducibility.csv
-results/aim1/permutation_null_distribution.csv
+scripts/aim2/development/
 ```
 
-## Analysis handoff
+They are preserved for provenance but are not part of the final supported analysis workflow.
 
-The shared preprocessing and QC pipeline is complete before Aim 1 and Aim 2
-development begins. Both analyses must start from the same cleaned data and
-must not independently redefine the shared preprocessing rules.
+## Interpretation
 
-### Shared starting data
+The project distinguishes among three different questions:
 
-The main shared daily dataset is:
+1. whether physiological features vary systematically across menstrual phase;
+2. whether those patterns are reproducible within individuals;
+3. whether learning an individual's prior pattern improves prediction of future phase.
 
-`results/preprocessed/mcphases_daily_master.csv`
+These are not equivalent. A participant can show a recognizable phase-associated physiological pattern while still providing little transferable predictive benefit if the magnitude, baseline, or direction of that pattern changes across cycles or years.
 
-Cycle-level QC information is stored in:
+## License and data access
 
-`results/preprocessed/mcphases_cycle_qc.csv`
-
-Participant-level QC information is stored in:
-
-`results/preprocessed/mcphases_participant_qc.csv`
-
-These generated files are not committed to Git because they are derived from
-restricted mcPHASES data. Each collaborator should obtain the mcPHASES dataset
-independently and regenerate these files using the documented preprocessing
-command.
-
-### Aim 1: physiological signature reproducibility
-
-Aim 1 asks whether menstrual-cycle physiological signatures are reproducible
-within individuals.
-
-A cycle can pass cycle-level Aim 1 QC without necessarily being usable for the
-repeated-cycle analysis. The pipeline currently identifies:
-
-- 93 cycles passing cycle-level Aim 1 QC
-- 37 participants contributing at least one eligible cycle
-- 25 participants contributing at least two eligible cycles
-- 81 eligible cycles from those 25 repeated-cycle participants
-- 16 participants with eligible cycles represented in both study intervals
-
-Therefore, the primary Aim 1 repeated-cycle analysis cohort is 25 participants
-contributing 81 cycles.
-
-### Aim 2: personalized phase prediction
-
-Aim 2 asks whether personalized wearable physiology improves prediction of
-hormone-defined menstrual phase relative to population-level approaches.
-
-Aim 2 starts from the same cleaned daily master dataset but defines its own
-analysis-specific eligibility criteria. It should not automatically restrict
-the dataset to `aim1_primary_eligible` cycles because prediction does not have
-the same requirement for repeated, closed cycles as Aim 1.
-
-Participant-level separation between training and testing must be preserved
-when evaluating population-level prediction models to prevent data leakage.
-
-### Shared preprocessing contract
-
-After this handoff, Aim-specific branches should not independently change
-shared preprocessing choices such as:
-
-- signal definitions or merge keys
-- invalid-value filtering
-- nightly HRV aggregation
-- menstrual phase normalization
-- menses-anchored cycle definition
-- cycle closure logic
-- physiological coverage calculations
-
-If a genuine preprocessing bug is discovered, it should be fixed in a
-dedicated branch with an accompanying test, merged into `main`, and then
-incorporated into both Aim branches.
+This repository contains analysis code and derived figures for the course project. Access to the original mcPHASES dataset is governed separately by the dataset's distribution and data-use terms.
