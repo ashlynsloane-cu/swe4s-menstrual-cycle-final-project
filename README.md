@@ -232,3 +232,57 @@ These are not equivalent. A participant can show a recognizable phase-associated
 ## License and data access
 
 This repository contains analysis code and derived figures for the course project. Access to the original mcPHASES dataset is governed separately by the dataset's distribution and data-use terms.
+
+
+## Code-review improvements (Moore–Fairborn)
+
+The required statistical-validation and duplicated-helper review items are
+addressed in this update. See
+[`docs/CODE_REVIEW_RESPONSE.md`](docs/CODE_REVIEW_RESPONSE.md) for a
+review-item-by-review-item record and
+[`docs/ANALYSIS_METHODS.md`](docs/ANALYSIS_METHODS.md) for variable units,
+statistical tests, model likelihood, evaluation metrics, and uncertainty.
+
+### Optional Snakemake workflow for preprocessing and Aim 1
+
+The default `pytest -q` workflow remains lightweight. To run the opt-in,
+data-dependent **preprocessing + Aim 1** DAG, obtain authorized access to the
+original mcPHASES data, keep it in an ignored local directory, then run:
+
+```bash
+python -m pip install -e ".[dev,workflow]"
+snakemake --snakefile workflow/Snakefile \
+  --cores 1 --config data_dir=data/mcphases --dry-run
+snakemake --snakefile workflow/Snakefile \
+  --cores 1 --config data_dir=data/mcphases
+```
+
+Supply another path via `--config data_dir=/path/to/mcphases` when needed.
+This DAG runs preprocessing and the **frozen default Aim 1 analysis only**.
+It does not download restricted data or run expensive Bayesian Aim 2 fits.
+Aim 2 instructions above remain the authoritative reproduction procedure.
+The interval-stratified label shuffle is **opt-in** for a separate sensitivity
+analysis; it is not silently substituted for the published default null.
+
+### Complete opt-in Aim 2 Snakemake workflow
+
+The default Snakemake `all` target still runs only preprocessing and Aim 1.
+Aim 2 now has explicit, computationally expensive named targets:
+`aim2_primary`, `aim2_longitudinal`, `aim2_simulation`, and `aim2`.
+Their dependency graph is described in
+[`docs/AIM2_WORKFLOW.md`](docs/AIM2_WORKFLOW.md). For statistical assumptions,
+variable-unit provenance and checks that require restricted data, see
+[`docs/STATISTICAL_AUDIT.md`](docs/STATISTICAL_AUDIT.md).
+
+```bash
+python -m pip install -e '.[workflow]'
+snakemake --snakefile workflow/Snakefile --cores 1 \
+  --config data_dir=data/mcphases --dry-run aim2
+```
+
+The shared model helper now validates log-loss category alignment for
+unsorted labels. It does **not** establish that previous fold-level log-loss
+results were correct; inspect saved predictions before reusing them.
+
+**Dry-run only** unless you explicitly intend to refit models and regenerate
+simulations. These commands never download the restricted mcPHASES dataset.

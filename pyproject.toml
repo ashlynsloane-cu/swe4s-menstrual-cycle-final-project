@@ -26,6 +26,9 @@ dev = [
     "pytest>=8,<10",
     "pycodestyle>=2.14,<3",
 ]
+workflow = [
+    "snakemake>=9,<10",
+]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -27,3 +27,6 @@ env/
 
 # Jupyter
 .ipynb_checkpoints/
+
+# Local Snakemake metadata
+.snakemake/

@@ -69,8 +69,9 @@ def run_aim1(
     signal_output_path=SIGNAL_OUTPUT_PATH,
     permutation_output_path=PERMUTATION_OUTPUT_PATH,
     n_permutations=10000,
+    stratify_by_study_interval=False,
 ):
-    """Run the full Aim 1 cycle-signature analysis."""
+    """Run Aim 1; the default preserves the frozen global null."""
     eligible_data = load_aim1_data(
         daily_path=daily_path,
         cycle_qc_path=cycle_qc_path,
@@ -90,11 +91,13 @@ def run_aim1(
         repeated_signatures,
         pairwise_distances,
         n_permutations=n_permutations,
+        stratify_by_study_interval=stratify_by_study_interval,
     )
 
     signal_results = signal_specific_reproducibility(
         repeated_signatures,
         n_permutations=n_permutations,
+        stratify_by_study_interval=stratify_by_study_interval,
     )
 
     output_path.parent.mkdir(

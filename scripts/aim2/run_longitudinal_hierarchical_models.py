@@ -12,9 +12,14 @@ import pandas as pd
 
 from sklearn.metrics import (
     accuracy_score,
-    log_loss,
 )
 from sklearn.preprocessing import StandardScaler
+
+from hierarchical_shared import (
+    aligned_log_loss,
+    combine_results,
+    extract_probabilities,
+)
 
 
 PHASES = [
@@ -323,79 +328,6 @@ def diagnostics(
     }
 
 
-def extract_probabilities(
-    model,
-    idata,
-    test: pd.DataFrame,
-    include_group_specific: bool,
-) -> tuple[np.ndarray, list[str]]:
-    """Extract posterior-mean class probabilities."""
-
-    predicted = model.predict(
-        idata,
-        data=test,
-        kind="response_params",
-        inplace=False,
-        include_group_specific=(
-            include_group_specific
-        ),
-    )
-
-    probability_data = (
-        predicted.posterior["p"]
-        .mean(
-            dim=("chain", "draw")
-        )
-    )
-
-    observation_dims = [
-        dim
-        for dim in probability_data.dims
-        if "obs" in dim
-    ]
-
-    if len(observation_dims) != 1:
-        raise RuntimeError(
-            "Could not identify prediction "
-            "observation dimension."
-        )
-
-    observation_dim = observation_dims[0]
-
-    category_dims = [
-        dim
-        for dim in probability_data.dims
-        if dim != observation_dim
-    ]
-
-    if len(category_dims) != 1:
-        raise RuntimeError(
-            "Could not identify prediction "
-            "category dimension."
-        )
-
-    category_dim = category_dims[0]
-
-    probability_data = (
-        probability_data.transpose(
-            observation_dim,
-            category_dim,
-        )
-    )
-
-    labels = [
-        str(value)
-        for value in probability_data.coords[
-            category_dim
-        ].values
-    ]
-
-    return (
-        probability_data.to_numpy(),
-        labels,
-    )
-
-
 def multiclass_brier(
     y_true: np.ndarray,
     probabilities: np.ndarray,
@@ -458,12 +390,10 @@ def evaluate(
                 predicted,
             )
         ),
-        "log_loss": float(
-            log_loss(
-                y_true,
-                probabilities,
-                labels=labels,
-            )
+        "log_loss": aligned_log_loss(
+            y_true,
+            probabilities,
+            labels,
         ),
         "brier_score": (
             multiclass_brier(
@@ -830,54 +760,6 @@ def run_fold(
     print(results.to_string(index=False))
 
 
-def combine_results(
-    args: argparse.Namespace,
-) -> None:
-    """Combine all completed fold outputs."""
-
-    result_files = sorted(
-        args.output_dir.glob(
-            "id*/fold_result.csv"
-        )
-    )
-
-    prediction_files = sorted(
-        args.output_dir.glob(
-            "id*/predictions.csv"
-        )
-    )
-
-    if result_files:
-        results = pd.concat(
-            [
-                pd.read_csv(path)
-                for path in result_files
-            ],
-            ignore_index=True,
-        )
-
-        results.to_csv(
-            args.output_dir
-            / "all_fold_results.csv",
-            index=False,
-        )
-
-    if prediction_files:
-        predictions = pd.concat(
-            [
-                pd.read_csv(path)
-                for path in prediction_files
-            ],
-            ignore_index=True,
-        )
-
-        predictions.to_csv(
-            args.output_dir
-            / "all_predictions.csv",
-            index=False,
-        )
-
-
 def main() -> None:
     """Run all final longitudinal Aim 2 folds."""
 
@@ -934,9 +816,9 @@ def main() -> None:
             args,
         )
 
-        combine_results(args)
+        combine_results(args.output_dir, "id*")
 
-    combine_results(args)
+    combine_results(args.output_dir, "id*")
 
     print("\n" + "=" * 72)
     print("LONGITUDINAL MODEL RUN COMPLETE")
