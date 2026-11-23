@@ -84,7 +84,7 @@ def test_distance_plot_preserves_summary_and_saves_all_formats(tmp_path):
 
 
 def test_clean_inference_annotation_and_caption():
-    """Exact adjusted p and mean effect appear; verbose caveats live elsewhere."""
+    """Check adjusted p-values and effects; caveats belong in the caption."""
     plot = load_script()
     pairs, _ = plot.summarize_distance_pairs(example_signatures())
     comparisons = pd.DataFrame(
@@ -106,7 +106,10 @@ def test_clean_inference_annotation_and_caption():
             assert any(p_value in item for item in axis_text)
             assert any(advantage in item for item in axis_text)
             assert any("Mean advantage" in item for item in axis_text)
-            assert all("Exploratory one-sided" not in item for item in axis_text)
+            assert all(
+                "Exploratory one-sided" not in item
+                for item in axis_text
+            )
         assert len(fig.texts) <= 2
         caption = plot.build_figure_caption(comparisons)
         assert "1.5 × IQR" in caption
