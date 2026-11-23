@@ -30,7 +30,7 @@ The analysis focuses on four wearable-derived physiological signals:
 
 - resting heart rate;
 - HRV RMSSD;
-- nightly skin temperature;
+- computed nightly temperature (exact source unit/convention unverified);
 - respiratory rate.
 
 Hormone measurements are used to define menstrual-cycle phase, but they are not used as predictors.
@@ -66,10 +66,14 @@ Therefore, **two cycles is not a universal rule**. More calibration data can red
 ├── assets/aim2/
 ├── data/README.md
 ├── docs/figures/aim2/
+├── docs/ANALYSIS_METHODS.md
+├── figures/aim1/
 ├── scripts/aim2/
 │   └── development/
+├── scripts/review/
 ├── src/
 ├── tests/
+├── workflow/Snakefile
 ├── environment.yml
 ├── pyproject.toml
 └── README.md
@@ -86,6 +90,26 @@ docs/figures/aim2/
 - **Figure 1 — Near-term personalization:** population-only versus two-cycle personalized prediction for future cycles within the same study interval.
 - **Figure 2 — Longitudinal personalization:** why person-specific information learned in 2022 does not transfer reliably to 2024, including baseline drift and phase-profile transfer diagnostics.
 - **Figure 3 — Personalization thresholds:** simulation showing how the number of calibration cycles required for reliable personalization depends on stable person-specific signal and cycle-to-cycle variability.
+
+## Approved Aim 1 figure
+
+The approved [Aim 1 distance comparison](figures/aim1/aim1_distance_boxes.png)
+is available as [PNG](figures/aim1/aim1_distance_boxes.png),
+[PDF](figures/aim1/aim1_distance_boxes.pdf), and
+[SVG](figures/aim1/aim1_distance_boxes.svg), with a
+[complete caption](figures/aim1/aim1_distance_boxes_caption.md),
+[aggregate comparison table](figures/aim1/aim1_panel_comparisons.csv),
+and [reproduction instructions](figures/aim1/README.md).
+
+Two exploratory one-sided permutation contrasts (9,999 permutations,
+seed 42) gave positive within-person mean-distance advantages but
+neither passed Holm adjustment: within interval +0.112 (adjusted
+p = 0.2282; 25 participants) and cross interval +0.269 (adjusted
+p = 0.2188; 14 participants present in both intervals). Pairwise
+distances are dependent, the two panels use different cohorts, and
+the permutation tests require exchangeability assumptions. These
+results do not establish a statistically significant participant
+signature or a change in similarity over time.
 
 ## Data and generated results
 
@@ -135,9 +159,9 @@ python -m pip install -e ".[dev]"
 The normal repository validation step is lightweight and does **not** rerun the Bayesian analyses.
 
 ```bash
-pytest -q
-python3 -m pycodestyle src tests scripts/aim2/*.py
-python3 -m py_compile scripts/aim2/*.py
+python -m pytest -q
+python -m pycodestyle src tests scripts/aim2/*.py scripts/review/*.py
+python -m py_compile scripts/aim2/*.py scripts/review/*.py
 git diff --check
 ```
 
@@ -236,53 +260,77 @@ This repository contains analysis code and derived figures for the course projec
 
 ## Code-review improvements (Moore–Fairborn)
 
-The required statistical-validation and duplicated-helper review items are
-addressed in this update. See
-[`docs/CODE_REVIEW_RESPONSE.md`](docs/CODE_REVIEW_RESPONSE.md) for a
-review-item-by-review-item record and
-[`docs/ANALYSIS_METHODS.md`](docs/ANALYSIS_METHODS.md) for variable units,
-statistical tests, model likelihood, evaluation metrics, and uncertainty.
+The review response records completed changes, evidence, and remaining
+limitations. Start with [the itemized response](docs/CODE_REVIEW_RESPONSE.md)
+and [analysis methods](docs/ANALYSIS_METHODS.md); the
+[statistical audit](docs/STATISTICAL_AUDIT.md) distinguishes code
+regression tests from empirical checks and assumptions. The
+[Aim 2 workflow guide](docs/AIM2_WORKFLOW.md) explains expensive model
+dependencies and expected output paths.
 
-### Optional Snakemake workflow for preprocessing and Aim 1
+Improvements include shared Aim 2 modeling helpers, label-aligned
+multiclass log-loss calculations, stricter paired-prediction matching,
+participant-level leakage audits, bootstrap concentration diagnostics,
+Aim 1 null-sensitivity checks, exploratory power simulations, and
+additional tests. The tests and audits are not substitutes for
+re-estimating Bayesian posteriors.
 
-The default `pytest -q` workflow remains lightweight. To run the opt-in,
-data-dependent **preprocessing + Aim 1** DAG, obtain authorized access to the
-original mcPHASES data, keep it in an ignored local directory, then run:
+### Empirical checks of preserved local results
+
+After the review changes, saved local Aim 2 fold scores were checked
+without refitting: **38 near-term and 18 longitudinal fold-level
+log-loss values (56 total), zero mismatches** against recalculation
+from the explicitly named phase-probability columns (within numerical
+precision). The split-leakage audit passed **19/19 near-term and 9/9
+longitudinal** folds. The primary and longitudinal cluster-bootstrap
+concentration checks used 5,000 resamples each.
+
+The Aim 1 interval-sensitivity analysis and the two exploratory
+figure contrasts were also run on locally available restricted
+derived signatures. The small power grid (five simulation replicates
+and 99 permutations per condition) is **a functional smoke test,
+not a calibrated power study**. These checks establish only the
+specific properties tested; they do not prove exchangeability,
+prospective generalization, or equivalence after Bayesian refitting.
+
+### Snakemake: preprocessing and Aim 1 by default
+
+All Snakemake targets are optional and require authorized local
+mcPHASES source files. Running Snakemake with **no target** invokes
+preprocessing and Aim 1 only; it does not fit the Bayesian Aim 2
+models. A dry-run plans work without executing it, but still
+requires the expected source filenames.
 
 ```bash
 python -m pip install -e ".[dev,workflow]"
-snakemake --snakefile workflow/Snakefile \
-  --cores 1 --config data_dir=data/mcphases --dry-run
-snakemake --snakefile workflow/Snakefile \
-  --cores 1 --config data_dir=data/mcphases
+snakemake --snakefile workflow/Snakefile --cores 1 --config data_dir=data/mcphases --list-target-rules
+snakemake --snakefile workflow/Snakefile --cores 1 --config data_dir=data/mcphases --dry-run
 ```
 
-Supply another path via `--config data_dir=/path/to/mcphases` when needed.
-This DAG runs preprocessing and the **frozen default Aim 1 analysis only**.
-It does not download restricted data or run expensive Bayesian Aim 2 fits.
-Aim 2 instructions above remain the authoritative reproduction procedure.
-The interval-stratified label shuffle is **opt-in** for a separate sensitivity
-analysis; it is not silently substituted for the published default null.
-
-### Complete opt-in Aim 2 Snakemake workflow
-
-The default Snakemake `all` target still runs only preprocessing and Aim 1.
-Aim 2 now has explicit, computationally expensive named targets:
-`aim2_primary`, `aim2_longitudinal`, `aim2_simulation`, and `aim2`.
-Their dependency graph is described in
-[`docs/AIM2_WORKFLOW.md`](docs/AIM2_WORKFLOW.md). For statistical assumptions,
-variable-unit provenance and checks that require restricted data, see
-[`docs/STATISTICAL_AUDIT.md`](docs/STATISTICAL_AUDIT.md).
+Aim 2 is explicitly opt-in through `aim2_primary`,
+`aim2_longitudinal`, `aim2_simulation`, or `aim2`:
 
 ```bash
-python -m pip install -e '.[workflow]'
-snakemake --snakefile workflow/Snakefile --cores 1 \
-  --config data_dir=data/mcphases --dry-run aim2
+snakemake --snakefile workflow/Snakefile --cores 1 --config data_dir=data/mcphases --dry-run aim2
 ```
 
-The shared model helper now validates log-loss category alignment for
-unsorted labels. It does **not** establish that previous fold-level log-loss
-results were correct; inspect saved predictions before reusing them.
+Use `--config data_dir=/authorized/path` when files are stored
+elsewhere. **Do not omit `--dry-run` for Aim 2 unless you intend to
+refit expensive Bayesian models and simulations.** No target
+downloads the restricted data.
 
-**Dry-run only** unless you explicitly intend to refit models and regenerate
-simulations. These commands never download the restricted mcPHASES dataset.
+### Outstanding scientific limitations
+
+- The source unit and absolute-versus-relative convention of
+  `computed_temperature.csv:nightly_temperature` remain unverified.
+- Aim 1 cycle-label permutation tests have exchangeability assumptions
+  not established by unit tests or the exploratory figure.
+- Historical fold-score agreement does not establish posterior refit
+  equivalence. The Bayesian reruns require a separate comparison of
+  model outputs and numerical diagnostics.
+- Cluster-bootstrap intervals use participant resampling with
+  replacement; this is appropriate to the chosen estimator but
+  does not eliminate small-cohort uncertainty.
+
+See [the statistical audit](docs/STATISTICAL_AUDIT.md) for scope,
+qualification, and instructions for additional data-dependent checks.

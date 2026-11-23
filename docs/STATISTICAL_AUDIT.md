@@ -1,8 +1,10 @@
 # Scientific-methods audit after the Moore–Fairborn review
 
-**Scope:** code and external documentation review; not an empirical rerun of
-restricted mcPHASES data. These notes deliberately distinguish verification
-of **implemented methods** from validation of **scientific assumptions**.
+**Scope:** code, documentation, unit tests, and separately reported
+local audits of saved derived mcPHASES outputs. These notes distinguish
+verification of **implemented methods** and saved-score consistency from
+validation of **scientific assumptions**. Bayesian fits were not rerun
+as part of the review checks.
 
 ## Source mapping and physical units
 
@@ -110,31 +112,46 @@ No raw data are copied into this repository.
 8. The oracle recentering test uses held-out 2024 observations. It remains
    retrospective and must never be presented as prospective model accuracy.
 
-## Remaining empirical verification
+## Local empirical checks after the original review
 
-These tasks cannot be completed from public repository code alone:
+The following checks were executed separately on authorized, untracked
+local derived results. They do not require publishing participant-level
+records and do not constitute a Bayesian refit:
 
-- Confirm all four source-column units and nightly-temperature convention
-  against authorized source metadata and, where appropriate, sensor logs.
-- Execute the interval sensitivity test on restricted cycle signatures,
-  examine p-values, and review cross-interval pair frequencies.
-- Check participant-level class composition and per-fold phase support,
-  and inspect whether the four class categories are consistently ordered.
-- Check **saved fold-level log-loss alignment** directly, without model
-  fitting (requires local ignored output tables):
+| Audit | Recorded result | Scope |
+| --- | --- | --- |
+| Saved fold-level log loss | 38/38 primary and 18/18 longitudinal fold scores matched recomputation from named class-probability columns; 0 mismatches | Saved predictions and fold-score tables; does not validate refitting |
+| Population/target-ID exclusion | 19/19 primary and 9/9 longitudinal fold checks passed | Checks tested split boundaries; not every potential upstream leakage source |
+| Cluster-bootstrap resampling | 5,000 replicates for each of the 16-participant primary and 9-participant longitudinal analyses | Concentration diagnostics, not validity thresholds |
+| Aim 1 original/global vs interval-stratified sensitivity | One-sided p = 0.2318 vs 0.2077 with 9,999 permutations | Different exploratory null assumptions; neither is significant |
+| Aim 1 approved panel A/B comparisons | Holm-adjusted p = 0.2282 / 0.2188 with 9,999 permutations, seed 42 | Pair distances dependent; panel A 25 participants, panel B 14 matched participants |
+| Synthetic power smoke grid | Five simulations and 99 permutations per scenario | Too few replicates for reliable power or type-I error estimates |
 
-  ```bash
-  python scripts/aim2/audit_fold_log_loss.py --analysis primary
-  python scripts/aim2/audit_fold_log_loss.py --analysis longitudinal
-  ```
+The prior unsorted-class log-loss safeguard is retained even though
+these specific stored score tables show no mismatches. The approved
+figure, caption, and aggregate comparisons are tracked under
+[`../figures/aim1/`](../figures/aim1/).
 
-  The resulting `results/aim2/audit/*_fold_log_loss_audit.json` files contain
-  aggregate mismatch counts, not participant-level predictions. A mismatch
-  is a verification finding and must be investigated before comparing past
-  results or rerunning models.
-- Verify all saved model predictions, posterior diagnostics, and numerical
-  equivalence after the shared-helper refactor; a successful unit suite is
-  not a Bayesian rerun.
-- Consider distance metrics with learned weights or regularized covariance
-  **only as a prespecified exploratory extension**, with proper leakage
-  avoidance and comparison to frozen Aim 1 results.
+## Verification still pending
+
+- Confirm all four source-column units, especially nightly computed
+  temperature's unit and absolute/deviation convention, against
+  authorized dataset metadata.
+- Assess permutation-test type-I error under realistic participant-level
+  dependence, unequal cycle counts, and interval heterogeneity.
+- Check participant-level class composition and per-fold phase support.
+- Validate posterior diagnostics and output equivalence after the
+  shared-helper refactor with an explicitly controlled Bayesian rerun.
+  The 56 saved-score matches do not establish this.
+- Explore weighted standardized distances or regularized covariance only
+  as a prespecified sensitivity analysis with proper leakage control.
+
+To rerun the **no-refit** saved-score checks on authorized local files:
+
+```bash
+python scripts/aim2/audit_fold_log_loss.py --analysis primary
+python scripts/aim2/audit_fold_log_loss.py --analysis longitudinal
+```
+
+Never publish restricted participant-level prediction files or raw
+mcPHASES records as part of this audit.

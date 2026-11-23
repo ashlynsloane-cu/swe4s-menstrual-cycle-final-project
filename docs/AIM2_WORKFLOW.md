@@ -88,9 +88,9 @@ accordingly.
 ## Validation sequence
 
 ```bash
-pytest -q
-python -m pycodestyle src tests scripts/aim2/*.py
-python -m py_compile scripts/aim2/*.py
+python -m pytest -q
+python -m pycodestyle src tests scripts/aim2/*.py scripts/review/*.py
+python -m py_compile scripts/aim2/*.py scripts/review/*.py
 snakemake --snakefile workflow/Snakefile --cores 1 \
   --config data_dir=data/mcphases --dry-run aim2
 ```
