@@ -1,0 +1,378 @@
+"""Opt-in, file-tracked mcPHASES analysis pipeline.
+
+Default ``all`` is the existing lightweight preprocessing/Aim 1 workflow.
+Aim 2 is available ONLY through explicit targets: aim2_primary,
+aim2_longitudinal, aim2_simulation, or aim2 (all three).
+
+Run from the repository root. No raw data are downloaded or committed.
+"""
+
+DATA_DIR = config.get("data_dir", "data/mcphases")
+RAW_FILES = [
+    "hormones_and_selfreport.csv",
+    "resting_heart_rate.csv",
+    "heart_rate_variability_details.csv",
+    "computed_temperature.csv",
+    "respiratory_rate_summary.csv",
+]
+
+PREPROCESSED = [
+    "results/preprocessed/mcphases_daily_master.csv",
+    "results/preprocessed/mcphases_daily_complete_cycles.csv",
+    "results/preprocessed/mcphases_cycle_qc.csv",
+    "results/preprocessed/mcphases_participant_qc.csv",
+]
+
+AIM1_OUTPUTS = [
+    "results/aim1/cycle_signatures.csv",
+    "results/aim1/pairwise_distances.csv",
+    "results/aim1/signal_specific_reproducibility.csv",
+    "results/aim1/permutation_null_distribution.csv",
+]
+
+PRIMARY_MANIFEST = [
+    "results/aim2/splits/aim2_within_interval_manifest.csv",
+    "results/aim2/splits/aim2_within_interval_summary.csv",
+]
+LONGITUDINAL_MANIFEST = [
+    "results/aim2/longitudinal/longitudinal_manifest_all.csv",
+    "results/aim2/longitudinal/longitudinal_manifest_primary.csv",
+    "results/aim2/longitudinal/longitudinal_manifest_with_id22.csv",
+]
+PRIMARY_MODELS = [
+    "results/aim2/primary_models/all_fold_results.csv",
+    "results/aim2/primary_models/all_predictions.csv",
+]
+LONGITUDINAL_MODELS = [
+    "results/aim2/longitudinal_models/all_fold_results.csv",
+    "results/aim2/longitudinal_models/all_predictions.csv",
+]
+PRIMARY_EVAL = [
+    "results/aim2/evaluation/overall_metrics.csv",
+    "results/aim2/evaluation/cluster_bootstrap_summary.csv",
+]
+LONGITUDINAL_EVAL = [
+    "results/aim2/longitudinal_evaluation/overall_metrics.csv",
+    "results/aim2/longitudinal_evaluation/bootstrap_summary.csv",
+]
+FIGURE1 = [
+    "results/figures/aim2/figure1_near_term_personalization.png",
+    "results/figures/aim2/figure1_near_term_personalization.pdf",
+]
+FIGURE2 = [
+    "results/figures/aim2/figure2_longitudinal_mechanisms.png",
+    "results/figures/aim2/figure2_longitudinal_mechanisms.pdf",
+]
+FIGURE3 = [
+    "results/figures/aim2/figure3_personalization_thresholds.png",
+    "results/figures/aim2/figure3_personalization_thresholds.pdf",
+]
+ASSETS_COMMON = [
+    "assets/aim2/icon_population_phase.png",
+    "assets/aim2/icon_person_signature.png",
+]
+ASSETS_SIMULATION = ASSETS_COMMON + [
+    "assets/aim2/icon_cycle_variation.png",
+    "assets/aim2/icon_day_noise.png",
+]
+COMPONENTS = [
+    "results/aim2/simulation_components/variance_components.csv",
+    "results/aim2/simulation_components/population_phase_patterns.csv",
+]
+REPEATABILITY = [
+    "results/aim2/simulation_components/phase_profile_repeatability.csv",
+    "results/aim2/simulation_components/cycle_profile_pairs.csv",
+]
+SIMULATION_DEPTH = "results/aim2/cycle_depth_simulation/simulation_summary.csv"
+SIMULATION_SENS = "results/aim2/cycle_depth_sensitivity/sensitivity_summary.csv"
+SIMULATION_VARIANCE = "results/aim2/variance_cycle_thresholds/cycle_thresholds.csv"
+SIMULATION_PRECISION = "results/aim2/nominal_precision_check/log_loss_summary.csv"
+AIM2_OUTPUTS = (
+    FIGURE1 + FIGURE2 + FIGURE3
+    + PRIMARY_EVAL + LONGITUDINAL_EVAL
+    + [SIMULATION_DEPTH, SIMULATION_SENS, SIMULATION_VARIANCE,
+       SIMULATION_PRECISION]
+)
+
+
+# Keep the default target quick and unrelated to Bayesian fitting.
+rule all:
+    input:
+        AIM1_OUTPUTS
+
+
+rule aim2_primary:
+    input:
+        PRIMARY_EVAL + FIGURE1
+
+
+rule aim2_longitudinal:
+    input:
+        LONGITUDINAL_EVAL + FIGURE2
+
+
+rule aim2_simulation:
+    input:
+        [SIMULATION_DEPTH, SIMULATION_SENS, SIMULATION_VARIANCE,
+         SIMULATION_PRECISION] + FIGURE3
+
+
+rule aim2:
+    input:
+        AIM2_OUTPUTS
+
+
+rule aim1_assumption_audit:
+    input:
+        "results/aim1/audit/assumptions.json"
+
+
+rule preprocess:
+    input:
+        [f"{DATA_DIR}/{name}" for name in RAW_FILES]
+    output:
+        PREPROCESSED
+    params:
+        data_dir=DATA_DIR
+    shell:
+        "python -m mcphases.preprocess --data-dir {params.data_dir:q} "
+        "--output-dir results/preprocessed --strict"
+
+
+rule aim1:
+    input:
+        daily=PREPROCESSED[0],
+        qc=PREPROCESSED[2]
+    output:
+        AIM1_OUTPUTS
+    shell:
+        "python -m mcphases.run_aim1"
+
+
+rule audit_aim1:
+    input:
+        AIM1_OUTPUTS[0]
+    output:
+        "results/aim1/audit/assumptions.json"
+    shell:
+        "python scripts/aim2/audit_aim1_assumptions.py "
+        "--signatures {input:q} --output {output:q}"
+
+
+rule primary_manifest:
+    input:
+        daily=PREPROCESSED[0],
+        qc=PREPROCESSED[2]
+    output:
+        PRIMARY_MANIFEST
+    shell:
+        "python scripts/aim2/build_within_interval_manifest.py"
+
+
+rule primary_folds:
+    input:
+        daily=PREPROCESSED[0],
+        manifests=PRIMARY_MANIFEST
+    output:
+        directory("results/aim2/centered_primary")
+    shell:
+        "python scripts/aim2/build_centered_primary_folds.py"
+
+
+rule primary_models:
+    input:
+        folds="results/aim2/centered_primary",
+        manifest=PRIMARY_MANIFEST[1]
+    output:
+        PRIMARY_MODELS
+    threads: 1
+    shell:
+        "PYTENSOR_FLAGS='cxx=' "
+        "python scripts/aim2/run_primary_hierarchical_models.py"
+
+
+rule evaluate_primary:
+    input:
+        PRIMARY_MODELS[1]
+    output:
+        PRIMARY_EVAL
+    shell:
+        "python scripts/aim2/evaluate_primary_predictions.py"
+
+
+rule figure1:
+    input:
+        predictions=PRIMARY_MODELS[1],
+        evaluation=PRIMARY_EVAL[0],
+        icons=ASSETS_COMMON
+    output:
+        FIGURE1
+    shell:
+        "python scripts/aim2/make_figure1_near_term_personalization.py"
+
+
+rule longitudinal_manifest:
+    input:
+        PREPROCESSED[1]
+    output:
+        LONGITUDINAL_MANIFEST
+    shell:
+        "python scripts/aim2/build_longitudinal_manifest.py"
+
+
+rule longitudinal_folds:
+    input:
+        daily=PREPROCESSED[0],
+        manifest=LONGITUDINAL_MANIFEST[1]
+    output:
+        directory("results/aim2/longitudinal_folds")
+    shell:
+        "python scripts/aim2/build_longitudinal_folds.py"
+
+
+rule longitudinal_models:
+    input:
+        folds="results/aim2/longitudinal_folds",
+        manifest=LONGITUDINAL_MANIFEST[1]
+    output:
+        LONGITUDINAL_MODELS
+    threads: 1
+    shell:
+        "PYTENSOR_FLAGS='cxx=' "
+        "python scripts/aim2/run_longitudinal_hierarchical_models.py"
+
+
+rule evaluate_longitudinal:
+    input:
+        LONGITUDINAL_MODELS[1]
+    output:
+        LONGITUDINAL_EVAL
+    shell:
+        "python scripts/aim2/evaluate_longitudinal_predictions.py"
+
+
+rule simulation_components:
+    input:
+        PREPROCESSED[1]
+    output:
+        COMPONENTS
+    shell:
+        "python scripts/aim2/estimate_simulation_components.py"
+
+
+rule repeatability:
+    input:
+        PREPROCESSED[1]
+    output:
+        REPEATABILITY
+    shell:
+        "python scripts/aim2/estimate_phase_profile_repeatability.py"
+
+
+rule simulation_depth:
+    input:
+        COMPONENTS + REPEATABILITY
+    output:
+        SIMULATION_DEPTH
+    shell:
+        "python scripts/aim2/run_cycle_depth_simulation.py"
+
+
+rule simulation_sensitivity:
+    input:
+        COMPONENTS + REPEATABILITY
+    output:
+        SIMULATION_SENS
+    shell:
+        "python scripts/aim2/run_cycle_depth_sensitivity.py"
+
+
+rule simulation_variance:
+    input:
+        COMPONENTS + REPEATABILITY
+    output:
+        SIMULATION_VARIANCE
+    shell:
+        "python scripts/aim2/run_variance_cycle_thresholds.py"
+
+
+rule simulation_precision:
+    input:
+        COMPONENTS + REPEATABILITY
+    output:
+        SIMULATION_PRECISION
+    shell:
+        "python scripts/aim2/run_nominal_precision_check.py"
+
+
+rule profile_transfer:
+    input:
+        primary="results/aim2/centered_primary",
+        longitudinal="results/aim2/longitudinal_folds"
+    output:
+        "results/aim2/profile_transfer/fold_profile_transfer.csv"
+    shell:
+        "python scripts/aim2/diagnose_empirical_profile_transfer.py"
+
+
+rule personalization_failure:
+    input:
+        primary_models=PRIMARY_MODELS[0],
+        longitudinal_models=LONGITUDINAL_MODELS[0],
+        transfer="results/aim2/profile_transfer/fold_profile_transfer.csv",
+        repeatability=REPEATABILITY[0],
+        primary_folds="results/aim2/centered_primary",
+        longitudinal_folds="results/aim2/longitudinal_folds"
+    output:
+        "results/aim2/personalization_failure/baseline_drift_summary.csv"
+    shell:
+        "python scripts/aim2/diagnose_personalization_failure.py"
+
+
+rule oracle_recenter:
+    input:
+        model_results=LONGITUDINAL_MODELS,
+        folds="results/aim2/longitudinal_folds"
+    output:
+        "results/aim2/oracle_recenter/fold_metrics.csv",
+        "results/aim2/oracle_recenter/overall_metrics.csv"
+    shell:
+        "PYTENSOR_FLAGS='cxx=' "
+        "python scripts/aim2/oracle_recenter_longitudinal.py"
+
+
+rule residual_phase_drift:
+    input:
+        oracle="results/aim2/oracle_recenter/fold_metrics.csv",
+        transfer="results/aim2/profile_transfer/fold_profile_transfer.csv",
+        repeatability=REPEATABILITY[0]
+    output:
+        "results/aim2/residual_phase_drift/participant_residual_penalty.csv"
+    shell:
+        "python scripts/aim2/diagnose_residual_phase_drift.py"
+
+
+rule figure2:
+    input:
+        oracle="results/aim2/oracle_recenter/fold_metrics.csv",
+        overall="results/aim2/oracle_recenter/overall_metrics.csv",
+        failure="results/aim2/personalization_failure/baseline_drift_summary.csv",
+        residual="results/aim2/residual_phase_drift/participant_residual_penalty.csv",
+        evaluation=LONGITUDINAL_EVAL[0],
+        icons=ASSETS_COMMON
+    output:
+        FIGURE2
+    shell:
+        "python scripts/aim2/make_figure2_longitudinal_mechanisms.py"
+
+
+rule figure3:
+    input:
+        depth=SIMULATION_DEPTH,
+        thresholds=SIMULATION_VARIANCE,
+        precision=SIMULATION_PRECISION,
+        icons=ASSETS_SIMULATION
+    output:
+        FIGURE3
+    shell:
+        "python scripts/aim2/make_figure3_personalization_thresholds.py"

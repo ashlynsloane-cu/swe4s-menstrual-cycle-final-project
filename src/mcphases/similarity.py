@@ -5,6 +5,8 @@ from itertools import combinations
 import numpy as np
 import pandas as pd
 
+from mcphases.permutation_validation import permute_participant_ids
+
 
 def select_repeated_cycle_cohort(signatures):
     """Keep participants with at least two eligible cycles."""
@@ -94,6 +96,14 @@ def calculate_pairwise_distances(
         complete,
         feature_columns,
     )
+    if (
+        not np.isfinite(feature_variances).all()
+        or (feature_variances <= 0).any()
+    ):
+        raise ValueError(
+            "Features must have positive finite variance for "
+            "standardized Euclidean distance."
+        )
 
     pairs = []
 
@@ -147,8 +157,16 @@ def permutation_test(
     pairwise_distances,
     n_permutations=10000,
     random_state=42,
+    stratify_by_study_interval=False,
 ):
-    """Perform a participant-label permutation test."""
+    """Test a positive within-person similarity advantage.
+
+    The frozen primary null shuffles cycle-level IDs globally. Set
+    ``stratify_by_study_interval`` for a separate sensitivity null.
+    """
+    if not isinstance(n_permutations, (int, np.integer)) or n_permutations < 1:
+        raise ValueError("n_permutations must be a positive integer")
+
     rng = np.random.default_rng(random_state)
 
     complete = signatures.dropna().reset_index(drop=True)
@@ -157,12 +175,25 @@ def permutation_test(
         pairwise_distances
     )
 
+    if not np.isfinite(observed_advantage):
+        raise ValueError(
+            "Permutation inference requires finite within-person "
+            "and between-person distances."
+        )
+
     participant_ids = complete["id"].to_numpy()
+    intervals = (
+        complete["study_interval"].to_numpy()
+        if stratify_by_study_interval
+        else None
+    )
 
     permuted_advantages = []
 
     for _ in range(n_permutations):
-        shuffled_ids = rng.permutation(participant_ids)
+        shuffled_ids = permute_participant_ids(
+            participant_ids, rng, study_intervals=intervals
+        )
 
         permuted_pairs = pairwise_distances.copy()
 
@@ -206,6 +237,7 @@ def signal_specific_reproducibility(
     signatures,
     n_permutations=10000,
     random_state=42,
+    stratify_by_study_interval=False,
 ):
     """Compare reproducibility across individual physiological signals."""
     signals = (
@@ -233,6 +265,7 @@ def signal_specific_reproducibility(
             pairwise_distances,
             n_permutations=n_permutations,
             random_state=random_state,
+            stratify_by_study_interval=stratify_by_study_interval,
         )
 
         results.append(
@@ -252,6 +285,7 @@ def signal_specific_reproducibility(
         all_pairwise_distances,
         n_permutations=n_permutations,
         random_state=random_state,
+        stratify_by_study_interval=stratify_by_study_interval,
     )
 
     results.append(

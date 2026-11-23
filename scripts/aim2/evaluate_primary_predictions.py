@@ -300,7 +300,7 @@ def prepare_paired(
         suffixes=("_population", "_hybrid"),
     )
 
-    if len(paired) != len(population):
+    if len(paired) != len(population) or len(paired) != len(hybrid):
         raise RuntimeError(
             "Population and hybrid predictions "
             "are not perfectly matched."
