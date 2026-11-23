@@ -6,7 +6,6 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
-
 def test_figures_are_grouped_by_aim():
     """Both aims have a discoverable, version-controlled figure directory."""
     assert (ROOT / "figures/README.md").is_file()
