@@ -65,13 +65,14 @@ Therefore, **two cycles is not a universal rule**. More calibration data can red
 ├── .github/workflows/test.yml
 ├── assets/aim2/
 ├── data/README.md
-├── docs/figures/aim2/
-├── docs/ANALYSIS_METHODS.md
-├── figures/aim1/
-├── scripts/aim2/
-│   └── development/
-├── scripts/review/
-├── src/
+├── docs/
+├── figures/
+│   ├── aim1/
+│   └── aim2/
+├── scripts/
+│   ├── aim2/
+│   └── review/
+├── src/mcphases/
 ├── tests/
 ├── workflow/Snakefile
 ├── environment.yml
@@ -79,37 +80,33 @@ Therefore, **two cycles is not a universal rule**. More calibration data can red
 └── README.md
 ```
 
-## Final Aim 2 figures
+## Figures
 
-Version-controlled copies of the final figures are stored in:
+Figures from both aims are collected under [`figures/`](figures/README.md).
+These are version-controlled exports; generated intermediate files and
+participant-level outputs remain outside Git in `results/`.
 
-```text
-docs/figures/aim2/
-```
+| Aim | Figure | Formats |
+| --- | --- | --- |
+| Aim 1 | [Physiological signature distances](figures/aim1/aim1_distance_boxes.png) within and across study intervals | [PNG](figures/aim1/aim1_distance_boxes.png), [PDF](figures/aim1/aim1_distance_boxes.pdf), [SVG](figures/aim1/aim1_distance_boxes.svg) |
+| Aim 2 | [Figure 1: Near-term personalization](figures/aim2/figure1_near_term_personalization.png) | [PNG](figures/aim2/figure1_near_term_personalization.png), [PDF](figures/aim2/figure1_near_term_personalization.pdf) |
+| Aim 2 | [Figure 2: Longitudinal personalization](figures/aim2/figure2_longitudinal_mechanisms.png) | [PNG](figures/aim2/figure2_longitudinal_mechanisms.png), [PDF](figures/aim2/figure2_longitudinal_mechanisms.pdf) |
+| Aim 2 | [Figure 3: Calibration-cycle simulation](figures/aim2/figure3_personalization_thresholds.png) | [PNG](figures/aim2/figure3_personalization_thresholds.png), [PDF](figures/aim2/figure3_personalization_thresholds.pdf) |
 
-- **Figure 1 — Near-term personalization:** population-only versus two-cycle personalized prediction for future cycles within the same study interval.
-- **Figure 2 — Longitudinal personalization:** why person-specific information learned in 2022 does not transfer reliably to 2024, including baseline drift and phase-profile transfer diagnostics.
-- **Figure 3 — Personalization thresholds:** simulation showing how the number of calibration cycles required for reliable personalization depends on stable person-specific signal and cycle-to-cycle variability.
+**Aim 1** compares standardized Euclidean distances between cycle
+signatures from the same and different participants. Exploratory mean
+similarity advantages are positive within intervals (+0.112; Holm-adjusted
+p = 0.2282) and across intervals (+0.269; adjusted p = 0.2188), but neither
+contrast meets a 0.05 threshold. See the [caption](figures/aim1/aim1_distance_boxes_caption.md),
+[comparison table](figures/aim1/aim1_panel_comparisons.csv), and
+[reproduction notes](figures/aim1/README.md) for cohort sizes, permutation
+units, dependency, and exchangeability assumptions.
 
-## Aim 1 distance comparisons
-
-The [Aim 1 distance comparison](figures/aim1/aim1_distance_boxes.png)
-is available as [PNG](figures/aim1/aim1_distance_boxes.png),
-[PDF](figures/aim1/aim1_distance_boxes.pdf), and
-[SVG](figures/aim1/aim1_distance_boxes.svg), with a
-[complete caption](figures/aim1/aim1_distance_boxes_caption.md),
-[aggregate comparison table](figures/aim1/aim1_panel_comparisons.csv),
-and [reproduction instructions](figures/aim1/README.md).
-
-Two exploratory one-sided permutation contrasts (9,999 permutations,
-seed 42) gave positive within-person mean-distance advantages but
-neither passed Holm adjustment: within interval +0.112 (adjusted
-p = 0.2282; 25 participants) and cross interval +0.269 (adjusted
-p = 0.2188; 14 participants present in both intervals). Pairwise
-distances are dependent, the two panels use different cohorts, and
-the permutation tests require exchangeability assumptions. These
-results do not establish a statistically significant participant
-signature or a change in similarity over time.
+**Aim 2** evaluates population-only versus personalized phase prediction
+within an interval (Figure 1), longitudinal transfer across study years
+(Figure 2), and simulation-based calibration requirements (Figure 3).
+See [Aim 2 figure descriptions](figures/aim2/README.md) and the
+[computational workflow](docs/AIM2_WORKFLOW.md) for reproduction details.
 
 ## Data and generated results
 
