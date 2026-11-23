@@ -124,12 +124,11 @@ records and do not constitute a Bayesian refit:
 | Population/target-ID exclusion | 19/19 primary and 9/9 longitudinal fold checks passed | Checks tested split boundaries; not every potential upstream leakage source |
 | Cluster-bootstrap resampling | 5,000 replicates for each of the 16-participant primary and 9-participant longitudinal analyses | Concentration diagnostics, not validity thresholds |
 | Aim 1 original/global vs interval-stratified sensitivity | One-sided p = 0.2318 vs 0.2077 with 9,999 permutations | Different exploratory null assumptions; neither is significant |
-| Aim 1 approved panel A/B comparisons | Holm-adjusted p = 0.2282 / 0.2188 with 9,999 permutations, seed 42 | Pair distances dependent; panel A 25 participants, panel B 14 matched participants |
+| Aim 1 panel A/B comparisons | Holm-adjusted p = 0.2282 / 0.2188 with 9,999 permutations, seed 42 | Pair distances dependent; panel A 25 participants, panel B 14 matched participants |
 | Synthetic power smoke grid | Five simulations and 99 permutations per scenario | Too few replicates for reliable power or type-I error estimates |
 
 The prior unsorted-class log-loss safeguard is retained even though
-these specific stored score tables show no mismatches. The approved
-figure, caption, and aggregate comparisons are tracked under
+these specific stored score tables show no mismatches. The figure, caption, and aggregate comparisons are tracked under
 [`../figures/aim1/`](../figures/aim1/).
 
 ## Verification still pending

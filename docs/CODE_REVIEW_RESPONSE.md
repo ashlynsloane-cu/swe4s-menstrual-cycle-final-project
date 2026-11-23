@@ -10,7 +10,7 @@ hierarchical-model drivers, and the primary evaluation script.
 | **Suggestion:** automate repeatability with Snakemake | Added `workflow/Snakefile` with preprocessing/Aim 1 default and separately opt-in, expensive Aim 2 targets | Ordinary test suite does not fit Bayesian models |
 | **Suggestion:** define units, metrics, and model objective | Added `docs/ANALYSIS_METHODS.md` explaining physical signal units (with uncertainty clearly flagged), dimensionless z-scores, likelihood, metrics and bootstrap | Documentation only |
 | **Suggestion:** weighted standardized distances / Mahalanobis | Not adopted: changing metric would change the frozen scientific question and requires leak-free selection and reanalysis | Future sensitivity analysis |
-| **Suggestion:** violin or box plots | Created and approved a two-panel Aim 1 box plot from locally available derived mcPHASES signatures | Versioned PNG/PDF/SVG, exploratory adjusted p-values and caption in `figures/aim1/` |
+| **Suggestion:** violin or box plots | Generated a two-panel Aim 1 box plot from locally available derived mcPHASES signatures | Versioned PNG/PDF/SVG, exploratory adjusted p-values and caption in `figures/aim1/` |
 | **Suggestion:** bootstrap unique-fraction tuning | Explained why ordinary clustered bootstrap intentionally contains duplicated and omitted participants | No change to uncertainty estimator |
 | **Preference:** flatten nested helper functions | Deferred where harmless; changes should preserve test coverage and frozen logic | Low priority |
 
@@ -53,7 +53,7 @@ See [`AIM2_WORKFLOW.md`](AIM2_WORKFLOW.md) and
 ## Post-review local verification
 
 The final figure is recorded under [`../figures/aim1/`](../figures/aim1/)
-with the approved caption, aggregate p-values, and reproducibility command.
+with the caption, aggregate p-values, and reproducibility command.
 The within-interval Holm-adjusted p-value was 0.2282 (25 participants);
 the cross-interval Holm-adjusted p-value was 0.2188 (14 matched
 participants). These are exploratory and neither is below 0.05.

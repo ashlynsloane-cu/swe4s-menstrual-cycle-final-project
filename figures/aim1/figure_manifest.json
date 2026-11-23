@@ -1,17 +1,15 @@
 {
-  "approver_reference_sha256": "bcd8a32c5535133b0741a3ac4b9ef7cd1d86cff7916ded1b361bfd6edf1445cb",
-  "meaning": "Exploratory two-panel comparison; no adjusted p < 0.05",
+  "description": "Exploratory within- and cross-interval cycle-signature comparisons",
+  "interpretation": "Neither Holm-adjusted p-value is below 0.05",
   "outputs_sha256": {
-    "README.md": "b0a4a8821e8fcce35a3b41083f595341a0fae615e5da0100ee6502dad668a7b3",
+    "README.md": "88d7197f80ddead837ff8a6fbcb82283e890d07a52d5b8ebcc29177bb6f8c7da",
     "aim1_distance_boxes.pdf": "e4fff677aecb0ac83b3f591e6d26f42eb6f0f52f192748a158ddf7b153fbfbf2",
     "aim1_distance_boxes.png": "aafa4eb55e54c6a0f20d886a5f0e98a6ed030a1e9096aa7685281ff2a0e22b9e",
-    "aim1_distance_boxes.svg": "56ef746e5c837d011759bce989a51fbe6c9fc61d666570792bbddee4e975bfd1",
-    "aim1_distance_boxes_approved_reference.png": "bcd8a32c5535133b0741a3ac4b9ef7cd1d86cff7916ded1b361bfd6edf1445cb",
+    "aim1_distance_boxes.svg": "b83618f5f81e8c82cbfc089bd0cbcd5ef9f096aa1b14cb23d0506d8592183f83",
     "aim1_distance_boxes_caption.md": "f4f9eb37ea176390e5ae96fd9f43141c12dc9e9f4c7ef992276d3168b99763cc",
     "aim1_panel_comparisons.csv": "007a329645ff6a86a8d520d4f064762e368d316dbb7356f246e63fddf2170ced"
   },
   "permutations": 9999,
-  "seed": 42,
-  "source_script_sha256": "8df3977fee5f562dec90280e3966a536955ad28a2caf09cc2f2b1833e6d6713d",
-  "status": "approved_2026-11-20"
+  "plotting_script_sha256": "8df3977fee5f562dec90280e3966a536955ad28a2caf09cc2f2b1833e6d6713d",
+  "seed": 42
 }

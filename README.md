@@ -91,9 +91,9 @@ docs/figures/aim2/
 - **Figure 2 — Longitudinal personalization:** why person-specific information learned in 2022 does not transfer reliably to 2024, including baseline drift and phase-profile transfer diagnostics.
 - **Figure 3 — Personalization thresholds:** simulation showing how the number of calibration cycles required for reliable personalization depends on stable person-specific signal and cycle-to-cycle variability.
 
-## Approved Aim 1 figure
+## Aim 1 distance comparisons
 
-The approved [Aim 1 distance comparison](figures/aim1/aim1_distance_boxes.png)
+The [Aim 1 distance comparison](figures/aim1/aim1_distance_boxes.png)
 is available as [PNG](figures/aim1/aim1_distance_boxes.png),
 [PDF](figures/aim1/aim1_distance_boxes.pdf), and
 [SVG](figures/aim1/aim1_distance_boxes.svg), with a
@@ -275,7 +275,7 @@ Aim 1 null-sensitivity checks, exploratory power simulations, and
 additional tests. The tests and audits are not substitutes for
 re-estimating Bayesian posteriors.
 
-### Empirical checks of preserved local results
+### Empirical validation of saved results
 
 After the review changes, saved local Aim 2 fold scores were checked
 without refitting: **38 near-term and 18 longitudinal fold-level
