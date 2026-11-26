@@ -17,7 +17,7 @@ from mcphases.aim1_panel_inference import (
 
 SCRIPT = (
     Path(__file__).resolve().parents[1]
-    / "scripts/review/plot_aim1_distance_boxes.py"
+    / "scripts/aim1/plot_aim1_distance_boxes.py"
 )
 
 

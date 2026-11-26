@@ -14,6 +14,7 @@ The repository contains:
 
 - finalized preprocessing and cycle-quality-control code;
 - Aim 1 analyses of within-person physiological reproducibility;
+- Aim 1 distance-metric sensitivity analyses using regularized Mahalanobis distance;
 - Aim 2 population and personalized phase-prediction models;
 - longitudinal 2022-to-2024 personalization analyses;
 - simulation experiments examining how many calibration cycles are needed for personalization;
@@ -34,6 +35,16 @@ The analysis focuses on four wearable-derived physiological signals:
 - respiratory rate.
 
 Hormone measurements are used to define menstrual-cycle phase, but they are not used as predictors.
+
+Each menstrual cycle is represented by a 16-dimensional physiological signature constructed from four physiological signals across four menstrual cycle phases. Phase-specific means are centered relative to the corresponding cycle-level mean.
+
+Standardized Euclidean distance is used as the primary similarity metric, accounting for differences in feature variance. Regularized Mahalanobis distance is used as a sensitivity analysis, accounting for covariance among physiological features using Ledoit-Wolf shrinkage.
+
+Similarity advantage is defined as:
+
+    mean(between-person distance) - mean(within-person distance)
+
+Positive values indicate greater within-person physiological similarity.
 
 ### Aim 2
 
@@ -68,8 +79,10 @@ Therefore, **two cycles is not a universal rule**. More calibration data can red
 ├── docs/
 ├── figures/
 │   ├── aim1/
+│   │   └── mahalanobis/
 │   └── aim2/
 ├── scripts/
+│   ├── aim1/
 │   ├── aim2/
 │   └── review/
 ├── src/mcphases/
@@ -89,6 +102,9 @@ participant-level outputs remain outside Git in `results/`.
 | Aim | Figure | Formats |
 | --- | --- | --- |
 | Aim 1 | [Physiological signature distances](figures/aim1/aim1_distance_boxes.png) within and across study intervals | [PNG](figures/aim1/aim1_distance_boxes.png), [PDF](figures/aim1/aim1_distance_boxes.pdf), [SVG](figures/aim1/aim1_distance_boxes.svg) |
+| Aim 1 | [Regularized Mahalanobis distance sensitivity analysis](figures/aim1/mahalanobis/aim1_distance_boxes.png) within and across study intervals | [PNG](figures/aim1/mahalanobis/aim1_distance_boxes.png), [PDF](figures/aim1/mahalanobis/aim1_distance_boxes.pdf), [SVG](figures/aim1/mahalanobis/aim1_distance_boxes.svg) |
+| Aim 1 | [Signal-specific distance metric comparison](figures/aim1/aim1_metric_comparison.png) | [PNG](figures/aim1/aim1_metric_comparison.png), [PDF](figures/aim1/aim1_metric_comparison.pdf), [SVG](figures/aim1/aim1_metric_comparison.svg) |
+| Aim 1 | [Physiological feature correlation heatmap](figures/aim1/aim1_feature_correlations.png) | [PNG](figures/aim1/aim1_feature_correlations.png), [PDF](figures/aim1/aim1_feature_correlations.pdf), [SVG](figures/aim1/aim1_feature_correlations.svg) |
 | Aim 2 | [Figure 1: Near-term personalization](figures/aim2/figure1_near_term_personalization.png) | [PNG](figures/aim2/figure1_near_term_personalization.png), [PDF](figures/aim2/figure1_near_term_personalization.pdf) |
 | Aim 2 | [Figure 2: Longitudinal personalization](figures/aim2/figure2_longitudinal_mechanisms.png) | [PNG](figures/aim2/figure2_longitudinal_mechanisms.png), [PDF](figures/aim2/figure2_longitudinal_mechanisms.pdf) |
 | Aim 2 | [Figure 3: Calibration-cycle simulation](figures/aim2/figure3_personalization_thresholds.png) | [PNG](figures/aim2/figure3_personalization_thresholds.png), [PDF](figures/aim2/figure3_personalization_thresholds.pdf) |
@@ -101,6 +117,32 @@ contrast meets a 0.05 threshold. See the [caption](figures/aim1/aim1_distance_bo
 [comparison table](figures/aim1/aim1_panel_comparisons.csv), and
 [reproduction notes](figures/aim1/README.md) for cohort sizes, permutation
 units, dependency, and exchangeability assumptions.
+
+To assess sensitivity to the choice of distance metric, the analysis was
+repeated using regularized Mahalanobis distance on the same complete-case
+repeated-cycle cohort. The direction of the within-person similarity
+advantage was preserved within and across study intervals, although
+neither comparison reached statistical significance after Holm correction.
+
+See the [Mahalanobis figure caption](figures/aim1/mahalanobis/aim1_distance_boxes_caption.md)
+and [comparison table](figures/aim1/mahalanobis/aim1_panel_comparisons.csv)
+for the corresponding interval-specific results.
+
+Exploratory signal-specific comparisons showed consistent ordering among
+individual physiological signals across both distance metrics. Resting
+heart rate exhibited the largest observed similarity advantage, followed
+by nightly temperature and HRV RMSSD. Respiratory rate exhibited a negative
+similarity advantage under both metrics. None of the signal-specific
+comparisons reached an unadjusted 0.05 significance threshold.
+
+The [signal-specific comparison table](figures/aim1/aim1_metric_comparison.csv)
+contains the corresponding similarity advantages and permutation p-values.
+The [feature correlation matrix](figures/aim1/aim1_feature_correlations.csv)
+illustrates covariance among the 16 centered physiological features and
+motivates the use of a covariance-aware sensitivity analysis.
+
+Raw distance advantages obtained using different metrics are not directly
+comparable in magnitude.
 
 **Aim 2** evaluates population-only versus personalized phase prediction
 within an interval (Figure 1), longitudinal transfer across study years
@@ -125,6 +167,9 @@ The repository was structured around reproducible scientific software practices,
 - leakage-safe population training;
 - deterministic simulation seeds;
 - unit tests for core data-splitting logic;
+- modular distance-metric implementations;
+- regression tests for covariance estimation, distance calculations, permutation inference, and figure generation;
+- automated analysis and figure generation through Snakemake;
 - PEP 8 style checks;
 - Python compilation checks;
 - GitHub Actions continuous integration;
@@ -151,24 +196,142 @@ conda activate beyond-average-cycle
 python -m pip install -e ".[dev]"
 ```
 
+To install the optional Snakemake workflow dependencies:
+
+```bash
+python -m pip install -e ".[dev,workflow]"
+```
+
 ## Running tests
 
 The normal repository validation step is lightweight and does **not** rerun the Bayesian analyses.
 
 ```bash
 python -m pytest -q
-python -m pycodestyle src tests scripts/aim2/*.py scripts/review/*.py
-python -m py_compile scripts/aim2/*.py scripts/review/*.py
+python -m pycodestyle src tests scripts/aim1/*.py scripts/aim2/*.py scripts/review/*.py
+python -m py_compile scripts/aim1/*.py scripts/aim2/*.py scripts/review/*.py
 git diff --check
 ```
 
 GitHub Actions performs the corresponding lightweight checks under Python 3.12.
+
+Following the addition of the Aim 1 distance-metric sensitivity analysis
+and visualization tests, the local test suite passed all **111 tests**.
 
 ## Optional: full scientific reproduction
 
 The commands in this section are **only** for someone who intentionally wants to regenerate the scientific analyses from the required local mcPHASES data.
 
 **These steps are not required for normal repository use, code review, grading, or figure inspection.**
+
+### Aim 1 analysis
+
+The complete Aim 1 analysis and figure workflow is available through the
+optional `aim1_figures` Snakemake target.
+
+```bash
+python -m pip install -e ".[dev,workflow]"
+
+snakemake -s workflow/Snakefile --cores 1 aim1_figures --dry-run
+
+snakemake -s workflow/Snakefile --cores 1 aim1_figures
+```
+
+This target generates:
+
+- preprocessing and cycle-quality-control outputs;
+- centered physiological cycle signatures;
+- standardized Euclidean distance analysis;
+- regularized Mahalanobis distance sensitivity analysis;
+- signal-specific permutation comparisons;
+- interval-specific distance boxplots for both metrics;
+- signal-specific distance metric comparison figure;
+- physiological feature correlation heatmap;
+- aggregate statistical tables and figure captions.
+
+Generated outputs are stored under:
+
+```text
+results/
+├── preprocessed/
+├── aim1/
+├── aim1_mahalanobis/
+└── figures/
+    └── aim1/
+        ├── euclidean/
+        └── mahalanobis/
+```
+
+The signal-specific comparison and feature correlation figures are
+generated directly under `results/figures/aim1/`.
+
+Final presentation-ready exports and aggregate supporting tables are
+version-controlled under `figures/aim1/`. Generated intermediate files
+remain outside Git.
+
+The analyses can also be reproduced individually using the Python
+analysis modules and plotting scripts.
+
+#### Primary standardized Euclidean analysis
+
+```bash
+python -m mcphases.run_aim1
+```
+
+#### Regularized Mahalanobis sensitivity analysis
+
+```bash
+python -m mcphases.run_aim1_mahalanobis \
+  --output-dir results/aim1_mahalanobis \
+  --permutations 10000
+```
+
+#### Standardized Euclidean distance boxplots
+
+```bash
+python scripts/aim1/plot_aim1_distance_boxes.py \
+  --signatures results/aim1/cycle_signatures.csv \
+  --distance-metric standardized_euclidean \
+  --output-dir results/figures/aim1/euclidean \
+  --permutations 9999 \
+  --seed 42 \
+  --annotate-p
+```
+
+#### Regularized Mahalanobis distance boxplots
+
+```bash
+python scripts/aim1/plot_aim1_distance_boxes.py \
+  --signatures results/aim1/cycle_signatures.csv \
+  --distance-metric regularized_mahalanobis \
+  --output-dir results/figures/aim1/mahalanobis \
+  --permutations 9999 \
+  --seed 42 \
+  --annotate-p
+```
+
+Both distance metrics use the same primary signature table to ensure that
+the interval-specific comparisons are evaluated on an identical cohort.
+
+#### Signal-specific distance metric comparison
+
+```bash
+python scripts/aim1/plot_aim1_metric_comparison.py \
+  --euclidean results/aim1/signal_specific_reproducibility.csv \
+  --mahalanobis results/aim1_mahalanobis/signal_specific_reproducibility.csv \
+  --output-dir results/figures/aim1
+```
+
+#### Physiological feature correlation heatmap
+
+```bash
+python scripts/aim1/plot_aim1_feature_correlations.py \
+  --signatures results/aim1/cycle_signatures.csv \
+  --output-dir results/figures/aim1
+```
+
+Each plotting script exports figures in PNG, PDF, and SVG formats,
+together with the corresponding aggregate statistical tables.
 
 ### Near-term Aim 2 analysis
 
@@ -230,6 +393,12 @@ The longitudinal rerun produced:
 - minimum tail ESS of 736.5;
 - 701 held-out 2024 evaluation days.
 
+The Aim 1 sensitivity analysis was executed locally using authorized
+derived mcPHASES data. All four Aim 1 figure sets were generated,
+the expanded test suite passed 111 tests, and the `aim1_figures`
+Snakemake dry run successfully resolved the required workflow
+dependencies.
+
 ## Development scripts
 
 Exploratory and pilot scripts are retained under:
@@ -272,6 +441,68 @@ Aim 1 null-sensitivity checks, exploratory power simulations, and
 additional tests. The tests and audits are not substitutes for
 re-estimating Bayesian posteriors.
 
+### Aim 1 distance-metric sensitivity analysis
+
+In response to the reviewers' recommendation to evaluate alternative
+standardized distance metrics, regularized Mahalanobis distance was
+implemented as a sensitivity analysis while retaining standardized
+Euclidean distance as the primary analysis.
+
+Standardized Euclidean distance accounts for differences in variance
+among physiological features but does not account for covariance between
+features. Regularized Mahalanobis distance incorporates the covariance
+structure of cohort-standardized physiological signatures using
+Ledoit-Wolf shrinkage, improving the stability of covariance estimation.
+
+The primary and sensitivity analyses use the same complete-case
+repeated-cycle cohort. The original primary analysis and its default
+permutation procedure remain unchanged.
+
+The implementation includes:
+
+- a modular regularized Mahalanobis distance implementation in
+  `src/mcphases/mahalanobis.py`;
+- a separate sensitivity-analysis runner in
+  `src/mcphases/run_aim1_mahalanobis.py`;
+- matched interval-specific boxplots using both distance metrics;
+- signal-specific comparisons of similarity advantages;
+- a correlation heatmap of the 16 centered physiological features;
+- unit tests for regularized covariance estimation, distance calculation,
+  cohort consistency, permutation inference, and visualization;
+- reproducible analysis and figure generation through Snakemake.
+
+The Aim 1 plotting scripts are organized under `scripts/aim1/`.
+
+The original distance boxplot script was extended to support both
+distance metrics while retaining standardized Euclidean distance as its
+default. This avoids duplicating the plotting and statistical inference
+implementations.
+
+### Aim 1 statistical inference
+
+Two complementary permutation-analysis approaches are retained.
+
+The pooled signal-specific analysis uses 10,000 permutations with
+cycle-level participant-label shuffling. These analyses are exploratory
+and report unadjusted permutation p-values.
+
+The interval-specific figure contrasts use 9,999 permutations and
+random seed 42, with Holm correction across the two comparisons
+within each distance metric.
+
+The within-interval comparison permutes cycle-level participant labels
+separately within study intervals. The cross-interval comparison
+reassigns complete later-interval participant profiles as blocks
+among participants observed in both study intervals.
+
+The same interval-specific permutation procedures are applied to
+standardized Euclidean and regularized Mahalanobis distances.
+
+Pairwise distances are not independent observations. The permutation
+procedures preserve the structures specified by their respective null
+hypotheses, and their validity depends on the associated
+exchangeability assumptions.
+
 ### Empirical validation of saved results
 
 After the review changes, saved local Aim 2 fold scores were checked
@@ -290,6 +521,37 @@ not a calibrated power study**. These checks establish only the
 specific properties tested; they do not prove exchangeability,
 prospective generalization, or equivalence after Bayesian refitting.
 
+The additional Aim 1 distance-metric sensitivity analysis was also
+executed on locally available restricted derived signatures. Positive
+within-person similarity advantages were observed within and across
+study intervals using both distance metrics, although neither
+interval-specific comparison reached statistical significance after
+Holm correction.
+
+The exploratory signal-specific results were:
+
+| Physiological signal | Standardized Euclidean advantage | Unadjusted p | Regularized Mahalanobis advantage | Unadjusted p |
+| --- | ---: | ---: | ---: | ---: |
+| Resting heart rate | +0.1694 | 0.0660 | +0.1551 | 0.0534 |
+| Nightly temperature | +0.1218 | 0.1493 | +0.1155 | 0.1498 |
+| HRV RMSSD | +0.1044 | 0.2555 | +0.0764 | 0.3016 |
+| Respiratory rate | -0.0613 | 0.6638 | -0.0546 | 0.6566 |
+| All signals | +0.1197 | 0.2318 | +0.0544 | 0.3417 |
+
+The ordering of individual physiological signals and the direction of
+their observed similarity advantages were consistent across both
+distance metrics. These results are descriptive and do not establish
+statistically significant within-person reproducibility.
+
+Numerical advantages from different distance metrics are presented for
+transparency but should not be interpreted as directly comparable
+effect sizes.
+
+The expanded local test suite passed **111 tests**, including tests
+for the regularized Mahalanobis implementation, analysis runner,
+matched cycle pairs, interval-specific inference, and figure
+generation. PEP 8 checks of the newly added Aim 1 code also passed.
+
 ### Snakemake: preprocessing and Aim 1 by default
 
 All Snakemake targets are optional and require authorized local
@@ -303,6 +565,31 @@ python -m pip install -e ".[dev,workflow]"
 snakemake --snakefile workflow/Snakefile --cores 1 --config data_dir=data/mcphases --list-target-rules
 snakemake --snakefile workflow/Snakefile --cores 1 --config data_dir=data/mcphases --dry-run
 ```
+
+The complete Aim 1 sensitivity analysis and figure workflow is
+available through the optional `aim1_figures` target.
+
+```bash
+snakemake --snakefile workflow/Snakefile --cores 1 --config data_dir=data/mcphases --dry-run aim1_figures
+```
+
+To execute the Aim 1 analysis and figure workflow:
+
+```bash
+snakemake --snakefile workflow/Snakefile --cores 1 --config data_dir=data/mcphases aim1_figures
+```
+
+The additional workflow rules include:
+
+- `aim1_mahalanobis`: regularized Mahalanobis sensitivity analysis;
+- `aim1_distance_boxplots`: interval-specific boxplots and inference
+  for both distance metrics;
+- `aim1_metric_comparison`: signal-specific distance metric comparison;
+- `aim1_feature_correlations`: physiological feature correlation heatmap;
+- `aim1_figures`: aggregate target for the complete Aim 1 figure workflow.
+
+The default Snakemake target remains unchanged. The additional Aim 1
+figure workflow does not require fitting the Bayesian Aim 2 models.
 
 Aim 2 is explicitly opt-in through `aim2_primary`,
 `aim2_longitudinal`, `aim2_simulation`, or `aim2`:
@@ -328,6 +615,20 @@ downloads the restricted data.
 - Cluster-bootstrap intervals use participant resampling with
   replacement; this is appropriate to the chosen estimator but
   does not eliminate small-cohort uncertainty.
+- Raw similarity advantages from different distance metrics are not
+  directly comparable in magnitude.
+- Centering physiological phase means relative to the cycle-level mean
+  can induce correlations among phase-specific features.
+- The feature correlation heatmap motivates covariance-aware distance
+  estimation but does not establish a causal explanation for differences
+  between distance metrics.
+- Signal-specific permutation analyses are exploratory and report
+  unadjusted p-values.
+- Consistency across distance metrics does not establish statistical
+  significance or equivalence.
+- The within-interval and cross-interval comparisons involve different
+  participant cohorts and should not be interpreted as a direct test
+  of temporal physiological drift.
 
 See [the statistical audit](docs/STATISTICAL_AUDIT.md) for scope,
 qualification, and instructions for additional data-dependent checks.

@@ -1,0 +1,26 @@
+{
+  "covariance_estimator": "Ledoit-Wolf",
+  "description": "Aim 1 distance-metric sensitivity analysis",
+  "interval_permutations": 9999,
+  "multiple_testing_correction": "Holm within each metric",
+  "original_manifest": "figure_manifest.json",
+  "outputs_sha256": {
+    "aim1_feature_correlations.csv": "d27bc1cd147e72a27e39f679b780cb20a6b331274939efb18a580860edc4dd4e",
+    "aim1_feature_correlations.pdf": "efca20317e0bafc4160ef4c03f80426965e26d6e30da3cb118efabd4281b9ec8",
+    "aim1_feature_correlations.png": "3a65d9bd47a5d49371c6e4e6d8dddb4342e3fe285e9d1bd5e49face0c9081384",
+    "aim1_feature_correlations.svg": "8a7f5c2c4e9337d73b7ad3e73da04532799f4da8e2d80aa50f5486b0323585cf",
+    "aim1_metric_comparison.csv": "044fc76f0aad87ee66056b34ed573d2403d6c520118beab236b22bc47e6f5a1f",
+    "aim1_metric_comparison.pdf": "ec38c3b177ceb7f51a087a3aeec4e04cce2b36e754161012f2d55f4a28264b48",
+    "aim1_metric_comparison.png": "efaadf2ada9587a67e4474e780ef4667a98495324f8217965b6b4208c7178344",
+    "aim1_metric_comparison.svg": "e0d82b41b98055e9710234058a093a5e23724e3606421229ea74e20a1379dcc7",
+    "mahalanobis/aim1_distance_boxes.pdf": "f52876869ded7491fcdb0eaad5df7a43c2f4cdf28f9e546e0b9c23934c19fd73",
+    "mahalanobis/aim1_distance_boxes.png": "f6ced75bf18b75b2ccd614956237018afff144c52d3da71daf3fce3de2c48df1",
+    "mahalanobis/aim1_distance_boxes.svg": "ff632d224fed927084aee290c07723fcb38542e6d21e7a41192a19d67de5efd4",
+    "mahalanobis/aim1_distance_boxes_caption.md": "45ca6cb5a2a0cb3c544964beba29684a95bca71eca8c7b75872f58436642ef5d",
+    "mahalanobis/aim1_panel_comparisons.csv": "900675e65cc6283e45b7c07e80afd5e1910eab162356f43c83fd42bd3735a06f"
+  },
+  "primary_metric": "standardized_euclidean",
+  "seed": 42,
+  "sensitivity_metric": "regularized_mahalanobis",
+  "signal_specific_permutations": 10000
+}

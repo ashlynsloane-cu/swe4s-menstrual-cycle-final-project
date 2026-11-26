@@ -20,6 +20,9 @@ import numpy as np
 import pandas as pd
 
 from mcphases.aim1_panel_inference import compare_panels
+from mcphases.mahalanobis import (
+    calculate_mahalanobis_pairwise_distances,
+)
 from mcphases.similarity import (
     calculate_pairwise_distances,
     select_repeated_cycle_cohort,
@@ -30,6 +33,11 @@ from mcphases.similarity import (
 SAME_PERSON_COLOR = "#0072B2"
 DIFFERENT_PERSON_COLOR = "#D55E00"
 EDGE_COLOR = "#404040"
+
+DISTANCE_LABELS = {
+    "standardized_euclidean": "Standardized Euclidean",
+    "regularized_mahalanobis": "Regularized Mahalanobis",
+}
 
 GROUPS = (
     (True, True, "Same person\nsame interval"),
@@ -46,6 +54,7 @@ PANELS = (
 
 def summarize_distance_pairs(
     signatures: pd.DataFrame,
+    distance_metric="standardized_euclidean",
 ) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Compute original pairwise distances and four descriptive groups."""
     complete = (
@@ -56,7 +65,12 @@ def summarize_distance_pairs(
     if len(complete) < 3:
         raise ValueError("Not enough complete repeated-cycle signatures")
 
-    pairs = calculate_pairwise_distances(complete)
+    if distance_metric == "standardized_euclidean":
+        pairs = calculate_pairwise_distances(complete)
+    elif distance_metric == "regularized_mahalanobis":
+        pairs = calculate_mahalanobis_pairwise_distances(complete)
+    else:
+        raise ValueError(f"Unknown distance metric: {distance_metric}")
     years = complete["study_interval"].to_numpy()
     pairs["same_interval"] = (
         years[pairs["index_a"].to_numpy()]
@@ -167,7 +181,11 @@ def draw_interval_panel(
     axis.spines["right"].set_visible(False)
 
 
-def make_figure(pairs: pd.DataFrame, comparisons=None):
+def make_figure(
+    pairs: pd.DataFrame,
+    comparisons=None,
+    distance_metric="standardized_euclidean",
+):
     """Build the two-panel figure without changing pairwise statistics."""
     if pairs.empty or not pairs["distance"].notna().any():
         raise ValueError("No valid pairwise distances to plot")
@@ -240,7 +258,10 @@ def make_figure(pairs: pd.DataFrame, comparisons=None):
                 color="#555555",
             )
 
-    axes[0].set_ylabel("Standardized Euclidean distance", fontsize=11)
+    axes[0].set_ylabel(
+        f"{DISTANCE_LABELS[distance_metric]} distance",
+        fontsize=11,
+    )
     fig.suptitle(
         "Are physiological cycle signatures more similar within a person?",
         fontsize=16,
@@ -256,7 +277,10 @@ def make_figure(pairs: pd.DataFrame, comparisons=None):
     return fig
 
 
-def build_figure_caption(comparisons=None) -> str:
+def build_figure_caption(
+    comparisons=None,
+    distance_metric="standardized_euclidean",
+) -> str:
     """Keep methodological detail beside the figure, not in its footer."""
     paragraphs = [
         "**Aim 1 — Physiological cycle-signature distances.** "
@@ -265,7 +289,8 @@ def build_figure_caption(comparisons=None) -> str:
         "Boxes indicate interquartile ranges, black lines mark medians, "
         "and whiskers extend to the most extreme observations within "
         "1.5 × IQR of each quartile. Outliers are hidden, not excluded "
-        "from the underlying calculations. Lower standardized Euclidean "
+        "from the underlying calculations. Lower "
+        f"{DISTANCE_LABELS[distance_metric]} "
         "distances indicate greater physiological similarity. Cycle pairs "
         "are dependent because individual cycles appear in multiple pairs; "
         "the displayed pair counts are not independent sample sizes.",
@@ -344,9 +369,14 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--signatures", type=Path, required=True)
     parser.add_argument(
+        "--distance-metric",
+        choices=list(DISTANCE_LABELS),
+        default="standardized_euclidean",
+    )
+    parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("results/figures/aim1"),
+        default=None,
     )
     parser.add_argument(
         "--permutations", type=int, default=0,
@@ -358,13 +388,21 @@ def main() -> None:
         help="Display Holm-adjusted p-values; requires --permutations > 0",
     )
     args = parser.parse_args()
+
+    if args.output_dir is None:
+        args.output_dir = Path("results/figures/aim1")
+        if args.distance_metric == "regularized_mahalanobis":
+            args.output_dir = args.output_dir / "mahalanobis"
     if args.annotate_p and args.permutations < 1:
         parser.error("--annotate-p requires --permutations >= 1")
 
     # Headless, reproducible rendering; not placed among imports (PEP 8).
     plt.switch_backend("Agg")
     signatures = pd.read_csv(args.signatures)
-    pairs, summary = summarize_distance_pairs(signatures)
+    pairs, summary = summarize_distance_pairs(
+        signatures,
+        distance_metric=args.distance_metric,
+    )
     args.output_dir.mkdir(parents=True, exist_ok=True)
     summary.to_csv(args.output_dir / "distance_box_summary.csv", index=False)
 
@@ -385,11 +423,20 @@ def main() -> None:
         print(comparisons.to_string(index=False))
 
     annotated = comparisons if args.annotate_p else None
-    fig = make_figure(pairs, annotated)
+    fig = make_figure(
+        pairs,
+        annotated,
+        distance_metric=args.distance_metric,
+    )
     paths = save_figure(fig, args.output_dir)
     plt.close(fig)
     caption_path = args.output_dir / "aim1_distance_boxes_caption.md"
-    caption_path.write_text(build_figure_caption(annotated))
+    caption_path.write_text(
+        build_figure_caption(
+            annotated,
+            distance_metric=args.distance_metric,
+        )
+    )
     print(summary.to_string(index=False))
     print("Saved:")
     for path in paths:

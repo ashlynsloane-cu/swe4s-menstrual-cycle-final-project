@@ -376,3 +376,118 @@ rule figure3:
         FIGURE3
     shell:
         "python scripts/aim2/make_figure3_personalization_thresholds.py"
+
+
+# Aim 1 distance-metric sensitivity analysis and figures.
+
+AIM1_MAHALANOBIS_OUTPUTS = [
+    "results/aim1_mahalanobis/cycle_signatures.csv",
+    "results/aim1_mahalanobis/pairwise_distances.csv",
+    "results/aim1_mahalanobis/signal_specific_reproducibility.csv",
+    "results/aim1_mahalanobis/permutation_null_distribution.csv",
+]
+
+AIM1_BOX_FILES = [
+    "aim1_distance_boxes.png",
+    "aim1_distance_boxes.pdf",
+    "aim1_distance_boxes.svg",
+    "aim1_distance_boxes_caption.md",
+    "distance_box_summary.csv",
+    "aim1_panel_comparisons.csv",
+    "aim1_panel_null_distributions.csv",
+]
+
+AIM1_COMPARISON_FILES = expand(
+    "results/figures/aim1/aim1_metric_comparison.{ext}",
+    ext=["png", "pdf", "svg", "csv"],
+)
+
+AIM1_CORRELATION_FILES = expand(
+    "results/figures/aim1/aim1_feature_correlations.{ext}",
+    ext=["png", "pdf", "svg", "csv"],
+)
+
+AIM1_METRICS = {
+    "euclidean": "standardized_euclidean",
+    "mahalanobis": "regularized_mahalanobis",
+}
+
+
+rule aim1_figures:
+    input:
+        AIM1_MAHALANOBIS_OUTPUTS,
+        expand(
+            "results/figures/aim1/{metric}/{filename}",
+            metric=["euclidean", "mahalanobis"],
+            filename=AIM1_BOX_FILES,
+        ),
+        AIM1_COMPARISON_FILES,
+        AIM1_CORRELATION_FILES
+
+
+rule aim1_mahalanobis:
+    input:
+        daily=PREPROCESSED[0],
+        qc=PREPROCESSED[2],
+        runner="src/mcphases/run_aim1_mahalanobis.py",
+        metric="src/mcphases/mahalanobis.py",
+        similarity="src/mcphases/similarity.py"
+    output:
+        AIM1_MAHALANOBIS_OUTPUTS
+    shell:
+        "python -m mcphases.run_aim1_mahalanobis "
+        "--output-dir results/aim1_mahalanobis "
+        "--permutations 10000"
+
+
+rule aim1_distance_boxplots:
+    input:
+        signatures=AIM1_OUTPUTS[0],
+        script="scripts/aim1/plot_aim1_distance_boxes.py",
+        similarity="src/mcphases/similarity.py",
+        metric="src/mcphases/mahalanobis.py",
+        inference="src/mcphases/aim1_panel_inference.py"
+    output:
+        expand(
+            "results/figures/aim1/{{metric}}/{filename}",
+            filename=AIM1_BOX_FILES,
+        )
+    wildcard_constraints:
+        metric="euclidean|mahalanobis"
+    params:
+        metric=lambda wc: AIM1_METRICS[wc.metric],
+        outdir=lambda wc: f"results/figures/aim1/{wc.metric}"
+    shell:
+        "python {input.script:q} "
+        "--signatures {input.signatures:q} "
+        "--distance-metric {params.metric:q} "
+        "--output-dir {params.outdir:q} "
+        "--permutations 9999 "
+        "--seed 42 --annotate-p"
+
+
+rule aim1_metric_comparison:
+    input:
+        euclidean=AIM1_OUTPUTS[2],
+        mahalanobis=AIM1_MAHALANOBIS_OUTPUTS[2],
+        script="scripts/aim1/plot_aim1_metric_comparison.py"
+    output:
+        AIM1_COMPARISON_FILES
+    shell:
+        "python {input.script:q} "
+        "--euclidean {input.euclidean:q} "
+        "--mahalanobis {input.mahalanobis:q} "
+        "--output-dir results/figures/aim1"
+
+
+rule aim1_feature_correlations:
+    input:
+        signatures=AIM1_OUTPUTS[0],
+        script="scripts/aim1/plot_aim1_feature_correlations.py",
+        similarity="src/mcphases/similarity.py"
+    output:
+        AIM1_CORRELATION_FILES
+    shell:
+        "python {input.script:q} "
+        "--signatures {input.signatures:q} "
+        "--output-dir results/figures/aim1"
