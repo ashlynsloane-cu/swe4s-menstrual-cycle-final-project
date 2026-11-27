@@ -68,7 +68,7 @@ are insufficient.
 From the repository root in the `beyond-average-cycle` environment:
 
 ```bash
-python scripts/review/plot_aim1_distance_boxes.py \
+python scripts/aim1/plot_aim1_distance_boxes.py \
   --signatures results/aim1/cycle_signatures.csv \
   --output-dir results/figures/aim1 \
   --permutations 9999 \

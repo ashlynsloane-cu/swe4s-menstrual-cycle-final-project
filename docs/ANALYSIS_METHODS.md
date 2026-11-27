@@ -52,6 +52,140 @@ interval-specific label multiplicities. These synthetic checks do not prove
 exchangeability for the real data, do not estimate the study's actual power,
 and do not justify substituting the alternative null without reanalysis.
 
+### Aim 1 distance-metric sensitivity analysis
+
+In response to the Moore–Fairborn code review, regularized
+Mahalanobis distance was implemented as an exploratory sensitivity
+analysis while retaining standardized Euclidean distance as the
+primary metric.
+
+Standardized Euclidean distance accounts for differences in feature
+variance but does not account for covariance between features.
+
+For two cycle signatures x and y:
+
+    d(x, y) = sqrt(sum((x_j - y_j)^2 / s_j^2))
+
+where s_j^2 is the cohort-level sample variance of feature j.
+
+For regularized Mahalanobis distance, features are standardized
+using cohort-level means and population standard deviations.
+Ledoit-Wolf shrinkage is then used to estimate a regularized
+covariance matrix.
+
+The distance between standardized signatures is:
+
+    d(z_x, z_y) = sqrt((z_x - z_y)^T P (z_x - z_y))
+
+where P is the inverse of the regularized covariance matrix.
+
+Both metrics use the same complete-case repeated-cycle cohort.
+Similarity advantage is defined as:
+
+    mean(between-person distance) - mean(within-person distance)
+
+Positive values indicate greater within-person similarity.
+Raw similarity advantages from different distance metrics are
+not directly comparable in magnitude.
+
+The implementation is provided in:
+
+- `src/mcphases/mahalanobis.py`
+- `src/mcphases/run_aim1_mahalanobis.py`
+
+The sensitivity analysis is executed separately, preserving
+the original primary analysis outputs.
+
+### Aim 1 interval-specific statistical inference
+
+The within-interval permutation test shuffles cycle-level
+participant labels separately within each study interval.
+
+The cross-interval permutation test reassigns complete
+later-interval participant profiles as blocks among participants
+observed in both study intervals.
+
+Both distance metrics use the same permutation procedures,
+with 9,999 permutations and random seed 42.
+
+Holm correction is applied across the two interval-specific
+comparisons separately for each distance metric.
+
+| Metric | Contrast | Similarity advantage | Holm-adjusted p |
+| --- | --- | ---: | ---: |
+| Standardized Euclidean | Within interval | +0.111913 | 0.2282 |
+| Standardized Euclidean | Across intervals | +0.268941 | 0.2188 |
+| Regularized Mahalanobis | Within interval | +0.053512 | 0.3163 |
+| Regularized Mahalanobis | Across intervals | +0.217161 | 0.2374 |
+
+Neither interval-specific comparison reached statistical
+significance after Holm correction under either distance metric.
+
+Pairwise distances are not independent observations.
+Permutation inference depends on the exchangeability assumptions
+associated with each null hypothesis.
+
+The within-interval and cross-interval comparisons involve
+different participant cohorts and do not provide a direct
+test of temporal physiological drift.
+
+See [AIM1_PANEL_INFERENCE.md](AIM1_PANEL_INFERENCE.md)
+for additional methodological details.
+
+### Aim 1 signal-specific comparisons
+
+Signal-specific analyses evaluate resting heart rate, HRV RMSSD,
+nightly temperature, and respiratory rate separately, alongside
+the combined 16-feature physiological signature.
+
+The pooled comparisons use 10,000 permutations with cycle-level
+participant-label shuffling and random seed 42.
+Permutation p-values are exploratory and unadjusted.
+
+The direction and ordering of individual signal-specific
+similarity advantages were consistent across both distance
+metrics. None of the comparisons reached an unadjusted
+0.05 significance threshold.
+
+### Aim 1 physiological feature correlations
+
+Pearson correlations among the 16 centered physiological
+signature features are visualized using a correlation heatmap.
+
+The correlation structure motivates covariance-aware distance
+estimation. However, cycle centering can itself induce
+correlations among phase-specific features.
+
+The heatmap is descriptive and does not establish a causal
+explanation for differences between distance metrics.
+
+### Aim 1 software validation and reproducibility
+
+Additional unit tests evaluate regularized covariance estimation,
+Mahalanobis distance calculations, cohort consistency, permutation
+inference, and figure generation.
+
+The expanded local test suite passed all 111 tests, along with
+repository-wide PEP 8 and Python compilation checks.
+
+The optional `aim1_figures` Snakemake target integrates the
+sensitivity analysis and all four Aim 1 figure sets.
+
+On November 26, 2026, all six scheduled Snakemake jobs completed
+successfully using Snakemake 9.22.0 and Python 3.12.16,
+regenerating the figures and reproducing the interval-specific
+statistical results from existing local preprocessed data and
+cycle signatures.
+
+No Bayesian Aim 2 models were refitted.
+
+Final figures, aggregate statistical results, reproduction
+instructions, and provenance manifests are available in
+[`figures/aim1/`](../figures/aim1/README.md).
+
+Consistency across distance metrics does not establish statistical
+significance, equivalence, exchangeability, or empirical power.
+
 ## Aim 2 fitting, evaluation, and uncertainty
 
 The models are hierarchical **categorical Bayesian regressions** implemented
